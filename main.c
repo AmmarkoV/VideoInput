@@ -73,6 +73,9 @@ int InitVideoInput(char * vid1 , char * vid2,char snapshots_on)
    if ( (!FileExists(vid1)) || (!FileExists(vid2) ) ) { fprintf(stderr,"Super Quick linux check for the webcams returned false.. please connect cameras!\n"); return 0; }
 
    //We want higher priority now..! :)
+   system("lsusb");
+
+   //We want higher priority now..! :)
    if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
                          { fprintf(stderr,"Increased priority \n"); }
 
