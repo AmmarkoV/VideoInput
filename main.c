@@ -1,3 +1,23 @@
+/***************************************************************************
+* Copyright (C) 2010 by Ammar Qammaz *
+* ammarkov@gmail.com *
+* *
+* This program is free software; you can redistribute it and/or modify *
+* it under the terms of the GNU General Public License as published by *
+* the Free Software Foundation; either version 2 of the License, or *
+* (at your option) any later version. *
+* *
+* This program is distributed in the hope that it will be useful, *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the *
+* GNU General Public License for more details. *
+* *
+* You should have received a copy of the GNU General Public License *
+* along with this program; if not, write to the *
+* Free Software Foundation, Inc., *
+* 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. *
+***************************************************************************/
+
 #include "VideoInput.h"
 
 #include <stdio.h>
@@ -55,7 +75,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION="0.02";
+char * VIDEOINPT_VERSION=(char *) "0.02";
 
 char * VideoInput_Version()
 {
@@ -89,7 +109,8 @@ int InitVideoInputs(int numofinputs)
     video_simulation = LIVE_ON;
 
     //Lets Refresh USB devices list :)
-    system("lsusb");
+    int ret=system((const char * ) "lsusb");
+    if ( ret == 0 ) { printf("Syscall USB list success\n"); }
 
     //We want higher priority now..! :)
     if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
@@ -173,6 +194,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
     // INIT MEMORY FOR SNAPSHOTS !
 
 
+    // STARTING VIDEO RECEIVE THREAD!
     camera_feeds[inpt].stop_snap_loop=0;
 
     struct ThreadPassParam param;
@@ -251,7 +273,7 @@ void * SnapLoop( void * ptr)
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
        usleep(20);
-       if ( camera_feeds[feed_num].snap_lock == 0 )
+       //if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!
 
           camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
