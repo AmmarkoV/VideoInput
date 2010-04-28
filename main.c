@@ -55,6 +55,7 @@ struct Video
   int video_simulation;
 
   /* THREADING DATA */
+  int thread_alive_flag;
   int snap_lock;
   int stop_snap_loop;
   pthread_t loop_thread;
@@ -65,14 +66,12 @@ struct ThreadPassParam
     int feednum;
 };
 
-//int stop_snap_loop=0;
+
 int total_cameras=0;
 struct Video * camera_feeds=0;
 char video_simulation_path[256];
 io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_USERPTR;
-//struct Video feed1,feed2;
-//struct Image rec_left={0},rec_right={0};
-//pthread_t loop_thread;
+
 
 void * SnapLoop(void *ptr );
 
@@ -115,7 +114,11 @@ int InitVideoInputs(int numofinputs)
     camera_feeds = (struct Video * ) malloc ( sizeof( struct Video ) * (numofinputs+1) );
     if (camera_feeds==0) { fprintf(stderr,"Error , cannot allocate memory for %u video inputs \n",total_cameras); return 0;}
 
-
+    int i;
+    for ( i=0; i<total_cameras; i++ )
+      {  /*We mark each camera as dead , to preserve a clean state*/
+          camera_feeds[i].thread_alive_flag=0;
+      }
 
     //Lets Refresh USB devices list :)
     int ret=system((const char * ) "lsusb");
@@ -141,14 +144,25 @@ int CloseVideoInputs()
     int i=0;
     for ( i=0; i<total_cameras; i++ )
      {
-       fprintf(stderr,"Video %u Stopping\n",i);
-       camera_feeds[i].stop_snap_loop=1;
-       pthread_join( camera_feeds[i].loop_thread, NULL);
-       usleep(30);
-       camera_feeds[i].v4l2_intf->stopCapture();
-       camera_feeds[i].v4l2_intf->freeBuffers();
-       if ( camera_feeds[i].frame != 0 ) { fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
-       if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
+       if (camera_feeds[i].thread_alive_flag)
+       {
+        fprintf(stderr,"Video %u Stopping\n",i);
+        camera_feeds[i].stop_snap_loop=1;
+        pthread_join( camera_feeds[i].loop_thread, NULL);
+        usleep(30);
+        camera_feeds[i].v4l2_intf->stopCapture();
+        camera_feeds[i].v4l2_intf->freeBuffers();
+        if ( camera_feeds[i].frame != 0 ) { free(camera_feeds[i].frame); fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
+        if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
+        if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
+       } else
+       {
+        fprintf(stderr,"Video Feed %u seems to be already dead , ensuring no memory leaks!\n",i);
+        camera_feeds[i].stop_snap_loop=1;
+        if ( camera_feeds[i].frame != 0 ) { free(camera_feeds[i].frame); fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
+        if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
+        if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
+       }
      }
 
 
@@ -169,11 +183,12 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
    if (!VideoInputsOk()) return 0;
    if ( (!FileExists(viddev)) ) { fprintf(stderr,"Super Quick linux check for the webcam (%s) returned false.. please connect V4L2 compatible camera!\n",viddev); return 0; }
 
-   camera_feeds[inpt].videoinp = viddev; // (char *) "/dev/video0";
+   camera_feeds[inpt].videoinp = viddev; //px (char *) "/dev/video0";
    camera_feeds[inpt].width = width;
    camera_feeds[inpt].height = height;
    camera_feeds[inpt].size_of_frame=width*height*3;
    camera_feeds[inpt].video_simulation=LIVE_ON;
+   camera_feeds[inpt].thread_alive_flag=0;
 
      CLEAR (camera_feeds[inpt].fmt);
      camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -209,8 +224,9 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
 
     // STARTING VIDEO RECEIVE THREAD!
     camera_feeds[inpt].stop_snap_loop=0;
+    camera_feeds[inpt].loop_thread=0;
 
-    struct ThreadPassParam param;
+    struct ThreadPassParam param={0};
     param.feednum=inpt;
     pthread_create( &camera_feeds[inpt].loop_thread, NULL,  SnapLoop ,(void*) &param);
 
@@ -297,6 +313,11 @@ void RecordInLoop(int feed_num)
     return;
 }
 
+int FeedReceiveLoopAlive(int feed_num)
+{
+  return camera_feeds[feed_num].thread_alive_flag;
+}
+
 
 void * SnapLoop( void * ptr)
 {
@@ -306,6 +327,12 @@ void * SnapLoop( void * ptr)
     param = (struct ThreadPassParam *) ptr;
     int feed_num=param->feednum;
 
+    if ( feed_num >= total_cameras )
+     {
+       printf("Error passing value of feed to the new thread\n");
+       printf("The new thread has no idea of what feed it is supposed to grab frames from so it will fail now!\n");
+       return 0;
+     }
 
    //We want higher priority now..! :)
     if ( increase_priority == 1 )
@@ -315,7 +342,8 @@ void * SnapLoop( void * ptr)
 
     }
 
-    printf("Video capture thread #%u is alive \n",feed_num);
+   printf("Video capture thread #%d is alive \n",feed_num);
+   camera_feeds[feed_num].thread_alive_flag=1;
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
@@ -337,8 +365,8 @@ void * SnapLoop( void * ptr)
         >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     }
 
-    printf("Video capture thread #%u is closing..! \n",feed_num);
-
+   printf("Video capture thread #%u is closing..! \n",feed_num);
+   camera_feeds[feed_num].thread_alive_flag=0;
    return ( void * ) 0 ;
 }
 
