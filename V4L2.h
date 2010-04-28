@@ -8,7 +8,7 @@
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
-typedef enum 
+typedef enum
 {
   IO_METHOD_READ,
   IO_METHOD_MMAP,
@@ -20,11 +20,15 @@ struct buffer {
   size_t length;
 };
 
-/**  
+/**
  * Class for getting frames from a camera via the Video For Linux library. This
- * is just an object oriented wrapper class. See 
+ * is just an object oriented wrapper class. See
  * http://staff.science.uva.nl/~bterwijn/Projects/V4L2/v4l2_website/v4l2spec.bytesex.org/spec-single/v4l2.html for Video For Linux documentation.
  */
+
+#define TIMEOUT_SEC 5
+#define TIMEOUT_USEC 0
+
 class V4L2
 {
  public:
@@ -46,7 +50,7 @@ class V4L2
   void *getFrame();
   void stopCapture();
   void freeBuffers();
-  
+
  private:
   char device[100];
   io_method io;

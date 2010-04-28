@@ -8,6 +8,7 @@
 #include "image_storage.h"
 #include <unistd.h>
 
+#define NO_FEED_SYNC 666
 #define LIVE_ON 0
 #define RECORDING_ON 1
 #define RECORDING_ONE_ON 2
@@ -30,6 +31,10 @@ struct Video
 
   /*VIDEO SIMULATION DATA*/
   struct Image rec_video;
+
+  /*VIDEO SYNCHRONIZATION DATA */
+  int sync_with_feed;
+  int snaps_sync_count;
 
   /* THREADING DATA */
   int snap_lock;
@@ -82,7 +87,7 @@ int InitVideoInputs(int numofinputs)
     if (total_cameras>0) { fprintf(stderr,"Error , Video Inputs already active ?\n total_cameras=%u\n",total_cameras); return 0;}
 
     //First allocate memory for V4L2 Structures  , etc
-    camera_feeds = (struct Video * ) malloc ( sizeof( struct Video ) * numofinputs );
+    camera_feeds = (struct Video * ) malloc ( sizeof( struct Video ) * (numofinputs+1) );
     if (camera_feeds==0) { fprintf(stderr,"Error , cannot allocate memory for %u video inputs \n",total_cameras); return 0;}
 
 
@@ -97,7 +102,6 @@ int InitVideoInputs(int numofinputs)
 
 
     total_cameras=numofinputs;
-    usleep(30);
 
     return 1 ;
 }
@@ -112,10 +116,13 @@ int CloseVideoInputs()
      {
        fprintf(stderr,"Video %u Stopping\n",i);
        camera_feeds[i].stop_snap_loop=1;
+       camera_feeds[i].sync_with_feed=NO_FEED_SYNC;
+       usleep(30);
        pthread_join( camera_feeds[i].loop_thread, NULL);
        usleep(30);
        camera_feeds[i].v4l2_intf->stopCapture();
        camera_feeds[i].v4l2_intf->freeBuffers();
+       if ( camera_feeds[i].frame != 0 ) { fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
        if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
      }
 
@@ -140,6 +147,9 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
    camera_feeds[inpt].width = width;
    camera_feeds[inpt].height = height;
    camera_feeds[inpt].size_of_frame=width*height*3;
+   camera_feeds[inpt].sync_with_feed= NO_FEED_SYNC;
+   camera_feeds[inpt].snaps_sync_count= 0;
+
      CLEAR (camera_feeds[inpt].fmt);
      camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
      camera_feeds[inpt].fmt.fmt.pix.width       = width;
@@ -178,7 +188,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
     param.feednum=inpt;
     pthread_create( &camera_feeds[inpt].loop_thread, NULL,  SnapLoop ,(void*) &param);
 
-    sleep(1);
+    //sleep(1);
     printf("InitVideoFeed %u is ok!\n",inpt);
 
 
@@ -187,6 +197,21 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
 }
 
 
+int SyncFeeds(int feed1,int feed2)
+{
+ camera_feeds[feed1].sync_with_feed=feed2;
+ camera_feeds[feed2].sync_with_feed=feed1;
+}
+
+int PauseFeed(int feednum)
+{
+ camera_feeds[feednum].snap_lock=1;
+}
+
+int UnpauseFeed(int feednum)
+{
+ camera_feeds[feednum].snap_lock=0;
+}
 
 
 unsigned char * GetFrame(int webcam_id)
@@ -228,7 +253,6 @@ void * SnapLoop( void * ptr)
     param = (struct ThreadPassParam *) ptr;
     int feed_num=param->feednum;
 
-    //feed_num=*tmp_feed_num;
 
    //We want higher priority now..! :)
    if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");}else
@@ -239,8 +263,21 @@ void * SnapLoop( void * ptr)
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
-       //usleep(10);
+       usleep(40);
+       if ( camera_feeds[feed_num].snap_lock == 0 )
+       { // NO ONE IS READING FROM THE MEMORY SO WE CAN SAFELY UPDATE IT!
+
        camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+       if ( camera_feeds[feed_num].sync_with_feed!= NO_FEED_SYNC )
+        {
+            ++camera_feeds[feed_num].snaps_sync_count;
+            while (camera_feeds[feed_num].snaps_sync_count!=camera_feeds[camera_feeds[feed_num].sync_with_feed].snaps_sync_count)
+             {
+               usleep(10);
+               if ( camera_feeds[feed_num].stop_snap_loop != 0 ) break;
+             }
+        }
+       }
       // printf(".%u.",feed_num);
 /*
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

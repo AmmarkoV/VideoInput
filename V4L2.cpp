@@ -447,8 +447,8 @@ void *V4L2::getFrame()
     FD_ZERO (&fds);
     FD_SET (fd, &fds);
     /* Timeout. */
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
+    tv.tv_sec = TIMEOUT_SEC;
+    tv.tv_usec = TIMEOUT_USEC;
 
     r = select (fd + 1, &fds, NULL, NULL, &tv);
 
