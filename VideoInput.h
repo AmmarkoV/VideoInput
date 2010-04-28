@@ -6,8 +6,13 @@ extern "C" {
 #endif
 
 char * VideoInput_Version();
-int InitVideoInput(char * vid1 , char * vid2,char snapshots_on);
-int CloseVideoInput();
+
+int InitVideoInputs(int numofinputs);
+int CloseVideoInputs();
+int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on);
+
+//int InitVideoInput(char * vid1 , char * vid2,char snapshots_on);
+//int CloseVideoInput();
 unsigned char * GetFrame(int webcam_id);
 
 // Playback / Recording
