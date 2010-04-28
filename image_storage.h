@@ -33,8 +33,12 @@ struct Image
   unsigned int depth;
 };
 
-int ReadDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
-int WriteDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
+
+int ReadRAW(char * filename,struct Image * pic);
+int WriteRAW(char * filename,struct Image * pic);
+
+//int ReadDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
+//int WriteDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
 int ClearImage(struct Image * pic );
 
 #ifdef __cplusplus

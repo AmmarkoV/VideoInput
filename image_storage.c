@@ -23,10 +23,11 @@
 #include <stdlib.h>
 
 
-int ReadDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic)
+
+int ReadRAW(char * filename,struct Image * pic)
 {
    unsigned int temp=0,size_of_image=0;
-   unsigned int mem_read1,mem_read2;
+   unsigned int mem_read1;
    unsigned int size_x,size_y,depth;
    FILE *file;
    long lSize=0;
@@ -42,53 +43,40 @@ int ReadDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_p
      fscanf(file,"%u\n",&size_y);
      fscanf(file,"%u\n",&depth);
 
-     if ( ( left_pic->depth != depth ) || ( left_pic->size_x!=size_x ) || ( left_pic->size_y!=size_y ) ) { fprintf(stderr,"!!!!ERROR WRONG SIZE OF MEMORY INITIALIZED :S !!!!\n"); }
+     if ( ( pic->depth != depth ) || ( pic->size_x!=size_x ) || ( pic->size_y!=size_y ) ) { fprintf(stderr,"!!!!ERROR WRONG SIZE OF MEMORY INITIALIZED :S !!!!\n"); }
      fprintf(stderr,"Reading file %u x %u @ %u \n",size_x,size_y,depth);
 
-     size_of_image =  (unsigned int) left_pic->size_x * (unsigned int)  left_pic->size_y * (unsigned int) left_pic->depth;
-     mem_read1=fread ( left_pic->pixels , 1 , size_of_image , file );
+     size_of_image =  (unsigned int) pic->size_x * (unsigned int)  pic->size_y * (unsigned int) pic->depth;
+     mem_read1=fread ( pic->pixels , 1 , size_of_image , file );
      fprintf(stderr,"Read first frame %u \n" , mem_read1);
 
-     fscanf(file,"%u",&temp);
-     if ( temp!=0 ) { fprintf(stderr,"Intermidiate byte not null!\n"); }
-
-     mem_read2=fread ( right_pic->pixels , 1 , size_of_image , file );
-     fprintf(stderr,"Read second frame %u \n" , mem_read2);
-
-     fscanf(file,"%u",&temp);
 
      fclose(file);
      return 1;
 	}
-
-  return 0;
+ return 0;
 }
 
 
-int WriteDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic)
+
+int WriteRAW(char * filename,struct Image * pic)
 {
-   unsigned int temp=0,size_of_image=0;
-   unsigned int mem_write1,mem_write2;
+ unsigned int temp=0,size_of_image=0;
+   unsigned int mem_write1;
    FILE *file;
    file = fopen(filename,"wb");
 
     if (file!=0)
 	{
-     fprintf(stderr,"Writing file %u x %u @ %u \n",left_pic->size_x,left_pic->size_y,left_pic->depth);
+     fprintf(stderr,"Writing file %u x %u @ %u \n", pic->size_x, pic->size_y, pic->depth);
 
-     fprintf(file,"%u\n",left_pic->size_x);
-     fprintf(file,"%u\n",left_pic->size_y);
-     fprintf(file,"%u\n",left_pic->depth);
+     fprintf(file,"%u\n", pic->size_x);
+     fprintf(file,"%u\n", pic->size_y);
+     fprintf(file,"%u\n", pic->depth);
 
-     size_of_image =  (unsigned int) left_pic->size_x * (unsigned int)  left_pic->size_y * (unsigned int) left_pic->depth;
+     size_of_image =  (unsigned int)  pic->size_x * (unsigned int)   pic->size_y * (unsigned int)  pic->depth;
 
-     mem_write1=fwrite ( left_pic->pixels , 1 , size_of_image , file );
-     fprintf(stderr,"Write first frame %u \n" , mem_write1);
-
-     fprintf(file,"%u",temp);
-
-     mem_write2=fwrite ( right_pic->pixels , 1 , size_of_image , file );
-     fprintf(stderr,"Writing second frame %u \n" , mem_write2);
+     mem_write1=fwrite (  pic->pixels , 1 , size_of_image , file );
 
      fprintf(file,"%u",temp);
 
@@ -101,6 +89,7 @@ int WriteDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_
 	}
  return 0;
 }
+
 
 int ClearImage(struct Image * pic )
 {

@@ -35,6 +35,8 @@
 #define PLAYBACK_ON_LOADED 4
 #define WORKING 5
 
+int increase_priority=0;
+
 struct Video
 {
   /* DEVICE NAME */
@@ -50,6 +52,7 @@ struct Video
 
   /*VIDEO SIMULATION DATA*/
   struct Image rec_video;
+  int video_simulation;
 
   /* THREADING DATA */
   int snap_lock;
@@ -66,7 +69,6 @@ struct ThreadPassParam
 int total_cameras=0;
 struct Video * camera_feeds=0;
 char video_simulation_path[256];
-int video_simulation=0;
 io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_USERPTR;
 //struct Video feed1,feed2;
 //struct Image rec_left={0},rec_right={0};
@@ -75,7 +77,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.02";
+char * VIDEOINPT_VERSION=(char *) "0.03";
 
 char * VideoInput_Version()
 {
@@ -97,6 +99,14 @@ FILE *fp = fopen(filename,"r");
  return 0;
 }
 
+int VideoInputsOk()
+{
+  if ( total_cameras == 0 ) { fprintf(stderr,"Error TotalCameras == zero\n"); return 0; }
+  if ( camera_feeds == 0 ) { fprintf(stderr,"Error CameraFeeds == zero\n");  return 0; }
+
+ return 1;
+}
+
 int InitVideoInputs(int numofinputs)
 {
     if (total_cameras>0) { fprintf(stderr,"Error , Video Inputs already active ?\n total_cameras=%u\n",total_cameras); return 0;}
@@ -106,16 +116,17 @@ int InitVideoInputs(int numofinputs)
     if (camera_feeds==0) { fprintf(stderr,"Error , cannot allocate memory for %u video inputs \n",total_cameras); return 0;}
 
 
-    video_simulation = LIVE_ON;
 
     //Lets Refresh USB devices list :)
     int ret=system((const char * ) "lsusb");
     if ( ret == 0 ) { printf("Syscall USB list success\n"); }
 
     //We want higher priority now..! :)
-    if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
-                          { fprintf(stderr,"Increased priority \n"); }
-
+    if ( increase_priority == 1 )
+    {
+     if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
+                           { fprintf(stderr,"Increased priority \n"); }
+    }
 
     total_cameras=numofinputs;
 
@@ -155,12 +166,14 @@ int CloseVideoInputs()
 int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
 {
    printf("Initializing Video Feed %u ( %s ) @ %u/%u \n",inpt,viddev,width,height);
+   if (!VideoInputsOk()) return 0;
    if ( (!FileExists(viddev)) ) { fprintf(stderr,"Super Quick linux check for the webcam (%s) returned false.. please connect V4L2 compatible camera!\n",viddev); return 0; }
 
    camera_feeds[inpt].videoinp = viddev; // (char *) "/dev/video0";
    camera_feeds[inpt].width = width;
    camera_feeds[inpt].height = height;
    camera_feeds[inpt].size_of_frame=width*height*3;
+   camera_feeds[inpt].video_simulation=LIVE_ON;
 
      CLEAR (camera_feeds[inpt].fmt);
      camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -213,12 +226,14 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
 
 int PauseFeed(int feednum)
 {
+ if (!VideoInputsOk()) return 0;
  //camera_feeds[feednum].snap_lock=1;
  return 1;
 }
 
 int UnpauseFeed(int feednum)
 {
+ if (!VideoInputsOk()) return 0;
  //camera_feeds[feednum].snap_lock=0;
  return 1;
 }
@@ -226,7 +241,9 @@ int UnpauseFeed(int feednum)
 
 unsigned char * GetFrame(int webcam_id)
 {
-  switch(video_simulation)
+  if (!VideoInputsOk()) return 0;
+
+  switch(camera_feeds[webcam_id].video_simulation)
   {
     case  LIVE_ON :
       if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].frame;} else
@@ -239,66 +256,85 @@ unsigned char * GetFrame(int webcam_id)
                                    { return 0; }
 
     break;
-/*
+
     case  PLAYBACK_ON :
      fprintf(stderr,"Reading Snapshot\n");
-           char store_path[256]={0};
-           strcpy(store_path,video_simulation_path);
-           ReadDoubleRAW(store_path,&rec_left,&rec_right);
-           video_simulation = PLAYBACK_ON_LOADED;
-     fprintf(stderr,"Returning Snapshot\n");
-     if ( webcam_id == 1 ) { return (unsigned char *) rec_left.pixels; } else
-     if ( webcam_id == 2 ) { return (unsigned char *) rec_right.pixels; }
-    break;*/
+
+      char store_path[256]={0};
+      char last_part[6]="0.raw";
+      last_part[0]='0'+webcam_id;
+
+      strcpy(store_path,video_simulation_path);
+      strcat(store_path,last_part);
+      ReadRAW(store_path,&camera_feeds[webcam_id].rec_video);
+      camera_feeds[webcam_id].video_simulation = PLAYBACK_ON_LOADED;
+      fprintf(stderr,"Returning Snapshot\n");
+      return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels;
+    break;
 
   }
   return 0;
 }
 
+
+
+void RecordInLoop(int feed_num)
+{
+    unsigned int mode_started = camera_feeds[feed_num].video_simulation;
+    camera_feeds[feed_num].video_simulation = WORKING;
+
+    memcpy(camera_feeds[feed_num].rec_video.pixels,camera_feeds[feed_num].frame,camera_feeds[feed_num].size_of_frame);
+
+    char store_path[256]={0};
+    char last_part[6]="0.raw";
+    last_part[0]='0'+feed_num;
+
+    strcpy(store_path,video_simulation_path);
+    strcat(store_path,last_part);
+    WriteRAW(store_path,&camera_feeds[feed_num].rec_video);
+    if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
+
+    return;
+}
+
+
 void * SnapLoop( void * ptr)
 {
     printf("Starting SnapLoop!\n");
+    /*Adapt ptr to feednum to pass value to feednum */
     struct ThreadPassParam *param=0;
     param = (struct ThreadPassParam *) ptr;
     int feed_num=param->feednum;
 
 
    //We want higher priority now..! :)
-   if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");}else
-                         { fprintf(stderr,"Increased priority \n"); }
+    if ( increase_priority == 1 )
+    {
+     if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
+                           { fprintf(stderr,"Increased priority \n"); }
 
+    }
 
     printf("Video capture thread #%u is alive \n",feed_num);
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
-       usleep(20);
-       //if ( camera_feeds[feed_num].snap_lock == 0 )
+       usleep(20); /* 20ms sleep time per sample , its a good value for 2 cameras*/
+
+       if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!
-
           camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
-
        }
-/*
-  //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-       // SNAPSHOT RECORDING
-       if ( ( feed1.frame == 0 ) || ( feed2.frame == 0 ) ) { fprintf(stderr,"Do not want Null frames recorded :P \n"); } else
-       if ( (video_simulation == RECORDING_ON ) || (video_simulation == RECORDING_ONE_ON) )
+
+      /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        SNAPSHOT RECORDING*/
+       if ( camera_feeds[feed_num].frame == 0 ) { fprintf(stderr,"Do not want Null frames recorded :P \n"); } else
+       if ( (camera_feeds[feed_num].video_simulation == RECORDING_ON ) || (camera_feeds[feed_num].video_simulation == RECORDING_ONE_ON) )
        {
-           unsigned int mode_started = video_simulation;
-           video_simulation = WORKING;
-
-           memcpy(rec_left.pixels,feed1.frame,feed1.size_of_frame);
-           memcpy(rec_right.pixels,feed2.frame,feed2.size_of_frame);
-
-           char store_path[256]={0};
-           strcpy(store_path,video_simulation_path);
-           WriteDoubleRAW(store_path,&rec_left,&rec_right);
-           if ( mode_started == RECORDING_ONE_ON) { video_simulation = LIVE_ON; }
+            RecordInLoop(feed_num);
        }
-       // SNAPSHOT RECORDING
-  //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-*/
+      /*SNAPSHOT RECORDING
+        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     }
 
     printf("Video capture thread #%u is closing..! \n",feed_num);
@@ -310,33 +346,50 @@ void * SnapLoop( void * ptr)
 // SNAPSHOT RECORDING
 void Play(char * filename)
 {
+    if (!VideoInputsOk()) return;
     if ( strlen( filename ) > 250 ) return;
-    video_simulation = PLAYBACK_ON;
+
+    int i=0;
+    for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = PLAYBACK_ON;
+
     strcpy(video_simulation_path,filename);
 }
 
 void Record(char * filename)
 {
+    if (!VideoInputsOk()) return;
     if ( strlen( filename ) > 250 ) return;
-    video_simulation = RECORDING_ON;
+
+    int i=0;
+    for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = RECORDING_ON;
+
     strcpy(video_simulation_path,filename);
 }
 
 void RecordOne(char * filename)
 {
+  if (!VideoInputsOk()) return;
+
     if ( strlen( filename ) > 250 ) return;
-    video_simulation = RECORDING_ONE_ON;
+
+    int i=0;
+    for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = RECORDING_ONE_ON;
+
     strcpy(video_simulation_path,filename);
 }
 
 void Stop()
 {
-     video_simulation = LIVE_ON;
+  if (!VideoInputsOk()) return;
+
+     int i=0;
+     for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = LIVE_ON;
 }
 
 unsigned int VideoSimulationState()
 {
-  return video_simulation;
+  if (!VideoInputsOk()) return 0;
+  return camera_feeds[0].video_simulation;
 }
 // SNAPSHOT RECORDING
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
