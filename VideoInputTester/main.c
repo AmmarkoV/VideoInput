@@ -59,7 +59,7 @@ int main()
                         return 1;}
 
 
-    printf("I Will now extract the RGB value from pixel 0,0 and pixel 10,40 \n");
+    printf("I Will now extract the RGB value from pixel 0,0 and pixel 10,40 and 11,40 \n");
     int x=0,y=0;
 
     unsigned char *px;
@@ -68,16 +68,17 @@ int main()
     unsigned char *b;
 
     px=pixels+ (y*320*3 + x*3);
-    r=px++
-    g=px++
-    b=px++
-    printf("The RGB value of pixel %u,%u is %u %u %u \n",x,y,r,g,b);
+    r=px++; g=px++; b=px;
+    printf("The RGB value of pixel %u,%u is %u %u %u \n",x,y,*r,*g,*b);
 
     x=10; y=40;
-    r=pixels[ y*320*3 + x*3 ];
-    g=pixels[ ( y*320*3 + x*3 ) +1 ];
-    b=pixels[ ( y*320*3 + x*3 ) +2  ];
-    printf("The RGB value of pixel %u,%u is %u %u %u \n",x,y,r,g,b);
+    px=pixels+ (y*320*3 + x*3);
+    r=px++; g=px++; b=px++;
+    printf("The RGB value of pixel %u,%u is %u %u %u \n",x,y,*r,*g,*b);
+
+    r=px++; g=px++; b=px;
+    printf("The RGB value of pixel %u,%u is %u %u %u \n",x+1,y,*r,*g,*b);
+
 
     printf ("I Will now try to write what the camera is seeing in a file called now.raw  ... ");
     //RecordOne((char*) "raw");

@@ -118,6 +118,8 @@ int InitVideoInputs(int numofinputs)
     for ( i=0; i<total_cameras; i++ )
       {  /*We mark each camera as dead , to preserve a clean state*/
           camera_feeds[i].thread_alive_flag=0;
+          camera_feeds[i].rec_video.pixels=0;
+          camera_feeds[i].frame=0;
       }
 
     //Lets Refresh USB devices list :)
@@ -152,14 +154,14 @@ int CloseVideoInputs()
         usleep(30);
         camera_feeds[i].v4l2_intf->stopCapture();
         camera_feeds[i].v4l2_intf->freeBuffers();
-        if ( camera_feeds[i].frame != 0 ) { free(camera_feeds[i].frame); fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
+        if ( camera_feeds[i].frame != 0 ) {  fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
         if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
         if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
        } else
        {
         fprintf(stderr,"Video Feed %u seems to be already dead , ensuring no memory leaks!\n",i);
         camera_feeds[i].stop_snap_loop=1;
-        if ( camera_feeds[i].frame != 0 ) { free(camera_feeds[i].frame); fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
+        if ( camera_feeds[i].frame != 0 ) {  fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
         if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
         if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
        }
