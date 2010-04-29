@@ -192,6 +192,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
    camera_feeds[inpt].size_of_frame=width*height*3;
    camera_feeds[inpt].video_simulation=LIVE_ON;
    camera_feeds[inpt].thread_alive_flag=0;
+   camera_feeds[inpt].snap_lock=0;
 
      CLEAR (camera_feeds[inpt].fmt);
      camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -209,6 +210,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
            camera_feeds[inpt].v4l2_intf->initBuffers();
            camera_feeds[inpt].v4l2_intf->startCapture();
 
+           camera_feeds[inpt].frame = 0;
            //camera_feeds[inpt].frame = malloc(width*height*3);
            //if ( camera_feeds[inpt].frame == 0 ) { fprintf(stderr,"Cannot Allocate memory for frame #%u!\n",inpt); return 0; }
        }
@@ -233,6 +235,8 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
     param.feednum=inpt;
     pthread_create( &camera_feeds[inpt].loop_thread, NULL,  SnapLoop ,(void*) &param);
 
+    int timeneeded=0;
+    while (camera_feeds[inpt].thread_alive_flag==0) { usleep(20); ++timeneeded; printf("."); }
 
     printf("InitVideoFeed %u is ok!\n",inpt);
 
@@ -318,7 +322,9 @@ void RecordInLoop(int feed_num)
 
 int FeedReceiveLoopAlive(int feed_num)
 {
-  return camera_feeds[feed_num].thread_alive_flag;
+ if (!VideoInputsOk()) return 0;
+ if ( feed_num >= total_cameras ) return 0;
+ return camera_feeds[feed_num].thread_alive_flag;
 }
 
 
@@ -326,7 +332,7 @@ void * SnapLoop( void * ptr)
 {
     printf("Starting SnapLoop!\n");
     /*Adapt ptr to feednum to pass value to feednum */
-    struct ThreadPassParam *param=0;
+    struct ThreadPassParam *param;
     param = (struct ThreadPassParam *) ptr;
     int feed_num=param->feednum;
 
@@ -355,14 +361,18 @@ void * SnapLoop( void * ptr)
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!
           camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+       } else
+       {
+         /* FEED LOCKED */
        }
 
       /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         SNAPSHOT RECORDING*/
-       if ( camera_feeds[feed_num].frame == 0 ) { fprintf(stderr,"Do not want Null frames recorded :P \n"); } else
        if ( (camera_feeds[feed_num].video_simulation == RECORDING_ON ) || (camera_feeds[feed_num].video_simulation == RECORDING_ONE_ON) )
        {
-            RecordInLoop(feed_num);
+            if ( camera_feeds[feed_num].frame == 0 ) { fprintf(stderr,"Do not want Null frames recorded :P \n"); }
+              else
+                RecordInLoop(feed_num);
        }
       /*SNAPSHOT RECORDING
         >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
