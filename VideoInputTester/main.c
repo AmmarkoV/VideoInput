@@ -62,10 +62,10 @@ int main()
     printf("I Will now extract the RGB value from pixel 0,0 and pixel 10,40 and 11,40 \n");
     int x=0,y=0;
 
-    unsigned char *px;
-    unsigned char *r;
-    unsigned char *g;
-    unsigned char *b;
+    unsigned char *px=0;
+    unsigned char *r=0;
+    unsigned char *g=0;
+    unsigned char *b=0;
 
     px=pixels+ (y*320*3 + x*3);
     r=px++; g=px++; b=px;
@@ -81,17 +81,17 @@ int main()
 
 
     printf ("I Will now try to write what the camera is seeing in a file called now.raw  ... ");
-    //RecordOne((char*) "raw");
+    RecordOne((char*) "raw");
     sleep(1);
     printf("Done");
 
     printf ("I Will now try to emulate camera input using a file called snapped.raw  ... ");
-    //Play((char*) "snapped");
+    Play((char*) "snapped");
     sleep(1);
     printf("Done");
 
     printf ("I Will now try to stop emulation and resume the live feed  ... ");
-    //Stop();
+    Stop();
     sleep(1);
     printf("Done");
 

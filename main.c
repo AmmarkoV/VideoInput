@@ -88,8 +88,8 @@ char FileExists(char * filename)
 {
 FILE *fp = fopen(filename,"r");
  if( fp ) { // exists
-            return 1;
             fclose(fp);
+            return 1;
           }
           else
           {
@@ -120,6 +120,7 @@ int InitVideoInputs(int numofinputs)
           camera_feeds[i].thread_alive_flag=0;
           camera_feeds[i].rec_video.pixels=0;
           camera_feeds[i].frame=0;
+          camera_feeds[i].v4l2_intf=0;
       }
 
     //Lets Refresh USB devices list :)
@@ -153,15 +154,15 @@ int CloseVideoInputs()
         pthread_join( camera_feeds[i].loop_thread, NULL);
         usleep(30);
         camera_feeds[i].v4l2_intf->stopCapture();
+        usleep(30);
         camera_feeds[i].v4l2_intf->freeBuffers();
-        if ( camera_feeds[i].frame != 0 ) {  fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
+        usleep(30);
         if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
         if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
        } else
        {
         fprintf(stderr,"Video Feed %u seems to be already dead , ensuring no memory leaks!\n",i);
         camera_feeds[i].stop_snap_loop=1;
-        if ( camera_feeds[i].frame != 0 ) {  fprintf(stderr,"FreeBuffers did not free buffer :S \n"); }
         if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
         if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
        }
@@ -208,8 +209,8 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
            camera_feeds[inpt].v4l2_intf->initBuffers();
            camera_feeds[inpt].v4l2_intf->startCapture();
 
-           camera_feeds[inpt].frame = malloc(width*height*3);
-           if ( camera_feeds[inpt].frame == 0 ) { fprintf(stderr,"Cannot Allocate memory for frame #%u!\n",inpt); return 0; }
+           //camera_feeds[inpt].frame = malloc(width*height*3);
+           //if ( camera_feeds[inpt].frame == 0 ) { fprintf(stderr,"Cannot Allocate memory for frame #%u!\n",inpt); return 0; }
        }
 
    printf("Enabling Snapshots!\n");
