@@ -356,7 +356,7 @@ void * SnapLoop( void * ptr)
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
-       usleep(20); /* 20ms sleep time per sample , its a good value for 2 cameras*/
+       usleep(15); /* 20ms sleep time per sample , its a good value for 2 cameras*/
 
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!

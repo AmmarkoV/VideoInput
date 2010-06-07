@@ -95,3 +95,21 @@ int ClearImage(struct Image * pic )
 {
     return 0;
 }
+
+
+int ConvertImageFormats(char * filenamein,char * filenameout)
+{ //Needs imagemagick package :)
+ char execstr[256]={0};
+ sprintf(execstr,"convert %s %s",filenamein,filenameout);
+ system(execstr);
+}
+
+int ConvertSnapshotsToVideo(int framerate,int bitrate,char * filenameout)
+{
+ // ffmpeg -r 10 -b 1800 -i %03d.jpg test1800.mp4
+ char execstr[256]={0};
+ sprintf(execstr,"ffmpeg -r %u -b %u -i \%05d.jpg %s.mp4",framerate,bitrate,filenameout);
+ system(execstr);
+}
+
+

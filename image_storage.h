@@ -41,6 +41,9 @@ int WriteRAW(char * filename,struct Image * pic);
 //int WriteDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
 int ClearImage(struct Image * pic );
 
+int ConvertImageFormats(char * filenamein,char * filenameout);
+int ConvertSnapshotsToVideo(int framerate,int bitrate,char * filenameout);
+
 #ifdef __cplusplus
 }
 #endif
