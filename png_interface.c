@@ -91,6 +91,14 @@ void read_png_file(char* file_name)
         fclose(fp);
 }
 
+void png_file_metrics(void * frame,int png_width,int png_height,int png_color_type,int png_bit_depth)
+{
+row_pointers = (png_bytep *) frame;
+width=png_width;
+height=png_height;
+color_type=PNG_COLOR_TYPE_RGB;//(png_byte) png_color_type;
+bit_depth=8;//(png_byte) png_bit_depth;
+}
 
 void write_png_file(char* file_name)
 {

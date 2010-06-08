@@ -309,12 +309,12 @@ void RecordInLoop(int feed_num)
     memcpy(camera_feeds[feed_num].rec_video.pixels,camera_feeds[feed_num].frame,camera_feeds[feed_num].size_of_frame);
 
     char store_path[256]={0};
-    char last_part[6]="0.raw";
+    char last_part[6]="0.png";
     last_part[0]='0'+feed_num;
 
     strcpy(store_path,video_simulation_path);
     strcat(store_path,last_part);
-    WriteRAW(store_path,&camera_feeds[feed_num].rec_video);
+    WritePNG(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
 
     return;

@@ -34,6 +34,8 @@
 		<Linker>
 			<Add option="-pthread" />
 			<Add library="../libVideoInput.a" />
+			<Add library="/usr/lib/libpng12.a" />
+			<Add library="/usr/lib/libz.a" />
 		</Linker>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
