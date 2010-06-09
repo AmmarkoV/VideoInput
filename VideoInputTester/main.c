@@ -47,9 +47,13 @@ int main()
     int MAX_waittime=10000;
     int waittime=0;
     while ( ( !FeedReceiveLoopAlive(0) )&& (waittime<MAX_waittime) )
-      { printf("."); ++waittime; usleep(50);  }
-    if (waittime>=MAX_waittime) {  printf(" failed! \n"); return 0;}
+      {
+        printf(".");
+        ++waittime;
+        usleep(50);
+      }
 
+    if (waittime>=MAX_waittime) {  printf(" failed! \n"); return 0;}
     printf(" ok! \n");
 
 
