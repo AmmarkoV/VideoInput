@@ -34,15 +34,9 @@ struct Image
 };
 
 
-//int ReadRAW(char * filename,struct Image * pic);
-//int WriteRAW(char * filename,struct Image * pic);
-
 int ReadPPM(char * filename,struct Image * pic);
 int WritePPM(char * filename,struct Image * pic);
-//int WriteDIB(char * filename,struct Image * pic);
 
-//int ReadDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
-//int WriteDoubleRAW(char * filename,struct Image * left_pic,struct Image * right_pic);
 int ClearImage(struct Image * pic );
 
 int ConvertImageFormats(char * filenamein,char * filenameout);

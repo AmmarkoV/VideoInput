@@ -51,7 +51,15 @@ int ReadPPM(char * filename,struct Image * pic)
         r = fscanf(pf, "%u\n", &d);
         if ( (r < 1) || ( d != 255 ) ) return 0;
 
-        if ( (w!=pic->size_x) || (h!=pic->size_y) ) { fprintf(stderr,"Incorrect file size :P"); return 0; }
+        if ( (w!=pic->size_x) || (h!=pic->size_y) )
+           {
+             fprintf(stderr,"Incorrect file size ( %s ) :P\n",filename);
+             if ( w * h > pic->size_x * pic->size_y )
+               {
+                 fprintf(stderr,"File %s will lead to overflow stopping read..\n",filename);
+                 return 0;
+               }
+           }
 
         if ( pic->pixels != 0 )
         {

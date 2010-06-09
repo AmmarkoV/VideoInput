@@ -76,7 +76,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.12";
+char * VIDEOINPT_VERSION=(char *) "0.15";
 
 char * VideoInput_Version()
 {
@@ -239,7 +239,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
     while (camera_feeds[inpt].thread_alive_flag==0) { usleep(20); ++timeneeded; printf("."); }
 
     printf("Giving some time for the receive threads to wake up!\n");
-    sleep(3);
+    sleep(1);
     printf("InitVideoFeed %u is ok!\n",inpt);
 
 

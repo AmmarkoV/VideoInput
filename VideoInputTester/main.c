@@ -32,18 +32,24 @@ int main()
     printf("-----------------------------------------------------------\n");
 
 
-    printf("I Will now attempt to start Video Devices with a total maximum number of 3 video devices! :) \n");
-    InitVideoInputs(3);
+    printf("I Will now attempt to start Video Devices with a total maximum number of 3 video devices! :) ..");
+    if ( InitVideoInputs(3)==1 ) { printf(" .. done \n"); } else
+                                 { printf(" .. failed \n"); return 0; }
 
     printf("I Will now attempt to start sampling on VideoDevice slot 0  :) \n");
     printf("The function called will be : InitVideoFeed(0,\"/dev/video0\",320,240,1);\n");
-    printf("0 is the first device , /dev/video0 the linux location of the device , 320x240 the size of the picture and 1 means enable snapshots!\n");
-    InitVideoFeed(0,"/dev/video0",320,240,1);
+    printf("0 is the first device , /dev/video0 the linux location of the device , 320x240 the size of the picture and 1 means enable snapshots! ");
+    if ( InitVideoFeed(0,"/dev/video0",320,240,1)==1  ) { printf(" .. done \n"); } else
+                                                        { printf(" .. failed \n"); return 0; }
 
     printf("Waiting for loop to begin receiving video ");
+
+    int MAX_waittime=10000;
     int waittime=0;
-    while ( !FeedReceiveLoopAlive(0) )
-      { printf("."); ++waittime; }
+    while ( ( !FeedReceiveLoopAlive(0) )&& (waittime<MAX_waittime) )
+      { printf("."); ++waittime; usleep(50);  }
+    if (waittime>=MAX_waittime) {  printf(" failed! \n"); return 0;}
+
     printf(" ok! \n");
 
 
@@ -85,22 +91,22 @@ int main()
     printf ("I Will now try to write what the camera is seeing in a file called raw.ppm  ... ");
     RecordOne((char*) "raw");
     sleep(1);
-    printf("Done");
+    printf("Done\n");
 
     printf ("I Will now try to emulate camera input using the written file called raw.ppm  ... ");
     Play((char*) "raw");
     sleep(1);
-    printf("Done");
+    printf("Done\n");
 
     printf ("I Will now try to write the file again in a file called piperaw.raw  ... ");
     RecordOne((char*) "piperaw");
     sleep(1);
-    printf("Done");
+    printf("Done\n");
 
     printf ("I Will now try to stop emulation and resume the live feed  ... ");
     Stop();
     sleep(1);
-    printf("Done");
+    printf("Done\n");
 
 
     printf("All tests are complete , closing video inputs!\n");
