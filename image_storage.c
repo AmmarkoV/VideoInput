@@ -91,13 +91,14 @@ int WriteRAW(char * filename,struct Image * pic)
 }
 
 
-int WritePNG(char * filename,struct Image * pic)
+int WriteDIB(char * filename,struct Image * pic)
 {
-    fprintf(stderr,"!!!!!!!!!!!!!!!!!!PNG CODE");
+    fprintf(stderr,"!!!!!!!!!!!!!!!!!!DIB CODE");
 /* Stupid non - thread safe code  */
-    png_file_metrics(pic->pixels,pic->size_x, pic->size_y,1,16);
-    write_png_file(filename);
-    fprintf(stderr,"!!!!!!!!!!!!!!!!!!PNG CODE");
+  //  png_file_metrics(pic->pixels,pic->size_x, pic->size_y,1,16);
+  //  write_png_file(filename);
+    fprintf(stderr,"!!!!!!!!!!!!!!!!!!DIB CODE");
+    return 0;
 }
 
 

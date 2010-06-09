@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "../VideoInput.h"
 
 int main()
@@ -50,7 +51,7 @@ int main()
     printf("unsigned char * pixels  is the pointer to the image data , this minimizes copying through memory\n");
     unsigned char * pixels = 0;
 
-    sleep(5);
+
 
     printf("I Will now attempt to catch the frame \n");
     pixels = (unsigned char *) GetFrame(0);

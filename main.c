@@ -238,8 +238,9 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
     int timeneeded=0;
     while (camera_feeds[inpt].thread_alive_flag==0) { usleep(20); ++timeneeded; printf("."); }
 
+    printf("Giving some time for the receive threads to wake up!\n");
+    sleep(3);
     printf("InitVideoFeed %u is ok!\n",inpt);
-
 
 
   return 1;
@@ -314,7 +315,7 @@ void RecordInLoop(int feed_num)
 
     strcpy(store_path,video_simulation_path);
     strcat(store_path,last_part);
-    WritePNG(store_path,&camera_feeds[feed_num].rec_video);
+    WriteDIB(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
 
     return;
