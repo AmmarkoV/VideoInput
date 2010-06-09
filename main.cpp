@@ -76,7 +76,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.15";
+char * VIDEOINPT_VERSION=(char *) "0.25";
 
 char * VideoInput_Version()
 {
@@ -195,9 +195,11 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
    camera_feeds[inpt].snap_lock=0;
 
      CLEAR (camera_feeds[inpt].fmt);
-     camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
      camera_feeds[inpt].fmt.fmt.pix.width       = width;
      camera_feeds[inpt].fmt.fmt.pix.height      = height;
+
+                                          /*  MAY NEED TO CHANGE THEM ACCORDING TO USB*/
+     camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
      camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY; //V4L2_PIX_FMT_RGB24; //V4L2_PIX_FMT_YUV420;
      camera_feeds[inpt].fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 

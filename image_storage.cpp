@@ -93,17 +93,6 @@ int WritePPM(char * filename,struct Image * pic)
 }
 
 
-int WriteDIB(char * filename,struct Image * pic)
-{
-    fprintf(stderr,"!!!!!!!!!!!!!!!!!!DIB CODE");
-/* Stupid non - thread safe code  */
-  //  png_file_metrics(pic->pixels,pic->size_x, pic->size_y,1,16);
-  //  write_png_file(filename);
-    fprintf(stderr,"!!!!!!!!!!!!!!!!!!DIB CODE");
-    return 0;
-}
-
-
 int ClearImage(struct Image * pic )
 {
     return 0;
@@ -114,15 +103,17 @@ int ConvertImageFormats(char * filenamein,char * filenameout)
 { //Needs imagemagick package :)
  char execstr[256]={0};
  sprintf(execstr,"convert %s %s",filenamein,filenameout);
- system(execstr);
+ int i = system(execstr);
+ return i;
 }
 
 int ConvertSnapshotsToVideo(int framerate,int bitrate,char * filenameout)
 {
  // ffmpeg -r 10 -b 1800 -i %03d.jpg test1800.mp4
  char execstr[256]={0};
- sprintf(execstr,"ffmpeg -r %u -b %u -i \%05d.jpg %s.mp4",framerate,bitrate,filenameout);
- system(execstr);
+ sprintf(execstr,"ffmpeg -r %u -b %u -i %%05d.jpg %s.mp4",framerate,bitrate,filenameout);
+ int i = system(execstr);
+ return i;
 }
 
 
