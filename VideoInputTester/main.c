@@ -82,13 +82,18 @@ int main()
     printf("The RGB value of pixel %u,%u is %u %u %u \n",x+1,y,*r,*g,*b);
 
 
-    printf ("I Will now try to write what the camera is seeing in a file called now.raw  ... ");
+    printf ("I Will now try to write what the camera is seeing in a file called raw.ppm  ... ");
     RecordOne((char*) "raw");
     sleep(1);
     printf("Done");
 
-    printf ("I Will now try to emulate camera input using a file called snapped.raw  ... ");
-    Play((char*) "snapped");
+    printf ("I Will now try to emulate camera input using the written file called raw.ppm  ... ");
+    Play((char*) "raw");
+    sleep(1);
+    printf("Done");
+
+    printf ("I Will now try to write the file again in a file called piperaw.raw  ... ");
+    RecordOne((char*) "piperaw");
     sleep(1);
     printf("Done");
 

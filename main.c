@@ -76,7 +76,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.03";
+char * VIDEOINPT_VERSION=(char *) "0.12";
 
 char * VideoInput_Version()
 {
