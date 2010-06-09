@@ -290,7 +290,7 @@ unsigned char * GetFrame(int webcam_id)
 
       strcpy(store_path,video_simulation_path);
       strcat(store_path,last_part);
-      ReadRAW(store_path,&camera_feeds[webcam_id].rec_video);
+      ReadPPM(store_path,&camera_feeds[webcam_id].rec_video);
       camera_feeds[webcam_id].video_simulation = PLAYBACK_ON_LOADED;
       fprintf(stderr,"Returning Snapshot\n");
       return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels;
@@ -310,12 +310,12 @@ void RecordInLoop(int feed_num)
     memcpy(camera_feeds[feed_num].rec_video.pixels,camera_feeds[feed_num].frame,camera_feeds[feed_num].size_of_frame);
 
     char store_path[256]={0};
-    char last_part[6]="0.png";
+    char last_part[6]="0.ppm";
     last_part[0]='0'+feed_num;
 
     strcpy(store_path,video_simulation_path);
     strcat(store_path,last_part);
-    WriteDIB(store_path,&camera_feeds[feed_num].rec_video);
+    WritePPM(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
 
     return;

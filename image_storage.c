@@ -23,7 +23,7 @@
 #include <stdlib.h>
 
 
-
+/*
 int ReadRAW(char * filename,struct Image * pic)
 {
    unsigned int temp=0,size_of_image=0;
@@ -88,6 +88,30 @@ int WriteRAW(char * filename,struct Image * pic)
      return 1;
 	}
  return 0;
+}
+*/
+
+
+int ReadPPM(char * filename,struct Image * pic)
+{
+}
+
+int WritePPM(char * filename,struct Image * pic)
+{
+    FILE *fd=0;
+    fd = fopen(filename,"wb");
+
+    if (fd!=0)
+	{
+     unsigned int n;
+     fprintf(fd, "P6\n%d %d\n255\n", pic->size_x, pic->size_y);
+     n = pic->size_x * pic->size_y;
+     fwrite(pic->pixels, 3, n, fd);
+     fflush(fd);
+     fclose(fd);
+     return 1;
+	}
+  return 0;
 }
 
 
