@@ -76,7 +76,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.25";
+char * VIDEOINPT_VERSION=(char *) "0.26";
 
 char * VideoInput_Version()
 {
@@ -126,6 +126,10 @@ int InitVideoInputs(int numofinputs)
     //Lets Refresh USB devices list :)
     int ret=system((const char * ) "lsusb");
     if ( ret == 0 ) { printf("Syscall USB list success\n"); }
+
+    printf("\nAvailiable Video Devices : \n");
+    ret=system((const char * ) "ls /dev | grep video");
+    if ( ret == 0 ) { printf("Success receiving video device list \n"); }
 
     //We want higher priority now..! :)
     if ( increase_priority == 1 )

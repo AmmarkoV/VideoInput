@@ -36,13 +36,13 @@ int ReadPPM(char * filename,struct Image * pic)
         unsigned int w, h, d;
         int r;
 
-        if (pf == NULL) return NULL;
+        if (pf == 0) return 0;
         t = fgets(buf, PPMREADBUFLEN, pf);
-        if ( (t == NULL) || ( strncmp(buf, "P6\n", 3) != 0 ) ) return 0;
+        if ( (t == 0) || ( strncmp(buf, "P6\n", 3) != 0 ) ) return 0;
         do
         { /* Px formats can have # comments after first line */
            t = fgets(buf, PPMREADBUFLEN, pf);
-           if ( t == NULL ) return NULL;
+           if ( t == 0 ) return 0;
         } while ( strncmp(buf, "#", 1) == 0 );
         r = sscanf(buf, "%u %u", &w, &h);
         if ( r < 2 ) return 0;
