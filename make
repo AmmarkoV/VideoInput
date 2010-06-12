@@ -1,4 +1,7 @@
 #!/bin/bash
+echo "Hand made make script for VideoInput - VideoInputTester .."
+echo "Should provide libVideoInput.a and VideoInputTester/bin/Debug/VideoInputTester"
+echo "Written by Ammar Qammaz a.k.a AmmarkoV :) "
 echo "Compiling files.."
 gcc -c main.cpp -o main.o
 gcc -c image_storage.cpp -o image_storage.o
@@ -11,6 +14,11 @@ ar  rcs libVideoInput.a main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o
 
 echo "Cleaning compiled object files.."
 rm main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o
+
+echo "Compiling Tester.."
+cd VideoInputTester
+./make
+cd ..
 
 echo "Done.."
 exit 0
