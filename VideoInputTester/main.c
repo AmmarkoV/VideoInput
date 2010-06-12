@@ -39,8 +39,12 @@ int main()
     printf("I Will now attempt to start sampling on VideoDevice slot 0  :) \n");
     printf("The function called will be : InitVideoFeed(0,\"/dev/video0\",320,240,1);\n");
     printf("0 is the first device , /dev/video0 the linux location of the device , 320x240 the size of the picture and 1 means enable snapshots! ");
-    if ( InitVideoFeed(0,"/dev/video0",320,240,1)==1  ) { printf(" .. done \n"); } else
-                                                        { printf(" .. failed \n"); return 0; }
+
+    printf("Creating a null setting structure , we want default video settings!");
+    struct VideoFeedSettings feedsettings={0};
+
+    if ( InitVideoFeed(0,"/dev/video0",320,240,1,feedsettings)==1  ) { printf(" .. done \n"); } else
+                                                                     { printf(" .. failed \n"); return 0; }
 
     printf("Waiting for loop to begin receiving video ");
 

@@ -34,6 +34,7 @@
 #define PLAYBACK_ON 3
 #define PLAYBACK_ON_LOADED 4
 #define WORKING 5
+#define NO_VIDEO_AVAILIABLE 6
 
 int increase_priority=0;
 
@@ -69,14 +70,14 @@ struct ThreadPassParam
 
 int total_cameras=0;
 struct Video * camera_feeds=0;
-char video_simulation_path[256];
+char video_simulation_path[256]={0};
 io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_USERPTR;
 
 
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.26";
+char * VIDEOINPT_VERSION=(char *) "0.263";
 
 char * VideoInput_Version()
 {
@@ -184,7 +185,7 @@ int CloseVideoInputs()
 }
 
 
-int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
+int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on,struct VideoFeedSettings videosettings)
 {
    printf("Initializing Video Feed %u ( %s ) @ %u/%u \n",inpt,viddev,width,height);
    if (!VideoInputsOk()) return 0;
@@ -202,6 +203,9 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
      camera_feeds[inpt].fmt.fmt.pix.width       = width;
      camera_feeds[inpt].fmt.fmt.pix.height      = height;
 
+     /* TODO
+     videosettings contains settings for the following 3 lines of code
+     */
                                           /*  MAY NEED TO CHANGE THEM ACCORDING TO USB*/
      camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
      camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY; //V4L2_PIX_FMT_RGB24; //V4L2_PIX_FMT_YUV420;
@@ -217,8 +221,6 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on)
            camera_feeds[inpt].v4l2_intf->startCapture();
 
            camera_feeds[inpt].frame = 0;
-           //camera_feeds[inpt].frame = malloc(width*height*3);
-           //if ( camera_feeds[inpt].frame == 0 ) { fprintf(stderr,"Cannot Allocate memory for frame #%u!\n",inpt); return 0; }
        }
 
    printf("Enabling Snapshots!\n");
@@ -272,36 +274,56 @@ int UnpauseFeed(int feednum)
 unsigned char * GetFrame(int webcam_id)
 {
   if (!VideoInputsOk()) return 0;
+  int handled=0;
 
   switch(camera_feeds[webcam_id].video_simulation)
   {
     case  LIVE_ON :
-      if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].frame;} else
+     {
+      handled=1;
+      if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].frame; } else
                                    { return 0; }
-
+     }
     break;
 
     case  PLAYBACK_ON_LOADED :
-      if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels;} else
+     {
+      handled=1;
+      if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels; } else
                                    { return 0; }
-
+     }
     break;
 
     case  PLAYBACK_ON :
-     fprintf(stderr,"Reading Snapshot\n");
+     {
+      handled=1;
+      fprintf(stderr,"Reading Snapshot\n");
 
       char store_path[256]={0};
-      char last_part[6]="0.raw";
+      char last_part[6]="0.ppm";
       last_part[0]='0'+webcam_id;
 
       strcpy(store_path,video_simulation_path);
       strcat(store_path,last_part);
       ReadPPM(store_path,&camera_feeds[webcam_id].rec_video);
       camera_feeds[webcam_id].video_simulation = PLAYBACK_ON_LOADED;
-      fprintf(stderr,"Returning Snapshot\n");
+      fprintf(stderr,"Reading Snapshot ( %s ) \n",store_path);
       return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels;
+     }
     break;
 
+    case NO_VIDEO_AVAILIABLE :
+     {
+     /* VIDEO DEVICE COULD BE DEAD , DO NOTHING!*/
+      handled=1;
+     }
+    break;
+
+     default :
+     {
+      /* THE FRAME MODE IS SET ON AN UNKNOWN MODE*/
+      handled=0;
+     }
   }
   return 0;
 }
@@ -323,6 +345,8 @@ void RecordInLoop(int feed_num)
     strcat(store_path,last_part);
     WritePPM(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
+
+    fprintf(stderr,"Writing Snapshot ( %s ) \n",store_path);
 
     return;
 }
@@ -384,8 +408,12 @@ void * SnapLoop( void * ptr)
       /*SNAPSHOT RECORDING
         >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     }
-
    printf("Video capture thread #%u is closing..! \n",feed_num);
+
+   /* !NOTICE! THE FOLLOWING LINE COUD BE DISABLED TO ENABLE REPLAYING EVEN IF VIDEO FAILS*/
+   camera_feeds[feed_num].video_simulation = NO_VIDEO_AVAILIABLE; // NO VIDEO MEANS NO_VIDEO_AVAILIABLE
+
+
    camera_feeds[feed_num].thread_alive_flag=0;
    return ( void * ) 0 ;
 }
@@ -397,10 +425,13 @@ void Play(char * filename)
     if (!VideoInputsOk()) return;
     if ( strlen( filename ) > 250 ) return;
 
+    //Prepare
+    strcpy(video_simulation_path,filename);
+
+
     int i=0;
     for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = PLAYBACK_ON;
 
-    strcpy(video_simulation_path,filename);
 }
 
 void Record(char * filename)
@@ -436,7 +467,7 @@ void Stop()
 
 unsigned int VideoSimulationState()
 {
-  if (!VideoInputsOk()) return 0;
+  if (!VideoInputsOk()) return NO_VIDEO_AVAILIABLE;
   return camera_feeds[0].video_simulation;
 }
 // SNAPSHOT RECORDING

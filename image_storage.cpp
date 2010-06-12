@@ -38,18 +38,18 @@ int ReadPPM(char * filename,struct Image * pic)
 
         if (pf == 0) return 0;
         t = fgets(buf, PPMREADBUFLEN, pf);
-        if ( (t == 0) || ( strncmp(buf, "P6\n", 3) != 0 ) ) return 0;
+        if ( (t == 0) || ( strncmp(buf, "P6\n", 3) != 0 ) ) { fclose(pf); return 0; }
         do
         { /* Px formats can have # comments after first line */
            t = fgets(buf, PPMREADBUFLEN, pf);
-           if ( t == 0 ) return 0;
+           if ( t == 0 ) { fclose(pf); return 0; }
         } while ( strncmp(buf, "#", 1) == 0 );
         r = sscanf(buf, "%u %u", &w, &h);
-        if ( r < 2 ) return 0;
+        if ( r < 2 ) { fclose(pf); return 0; }
         // The program fails if the first byte of the image is equal to 32. because
         // the fscanf eats the space and the image is read with some bit less
         r = fscanf(pf, "%u\n", &d);
-        if ( (r < 1) || ( d != 255 ) ) return 0;
+        if ( (r < 1) || ( d != 255 ) ) { fclose(pf); return 0; }
 
         if ( (w!=pic->size_x) || (h!=pic->size_y) )
            {
@@ -57,6 +57,7 @@ int ReadPPM(char * filename,struct Image * pic)
              if ( w * h > pic->size_x * pic->size_y )
                {
                  fprintf(stderr,"File %s will lead to overflow stopping read..\n",filename);
+                 fclose(pf);
                  return 0;
                }
            }
@@ -64,12 +65,14 @@ int ReadPPM(char * filename,struct Image * pic)
         if ( pic->pixels != 0 )
         {
             size_t rd = fread(pic->pixels,3, w*h, pf);
+            fclose(pf);
             if ( rd < w*h )
             {
                return 0;
             }
             return 1;
         }
+        fclose(pf);
     }
   return 0;
 }

@@ -25,11 +25,18 @@
 extern "C" {
 #endif
 
+struct VideoFeedSettings
+{
+   unsigned int EncodingType;
+   unsigned int PixelFormat;
+   unsigned int FieldType;
+};
+
 char * VideoInput_Version();
 
 int InitVideoInputs(int numofinputs);
 int CloseVideoInputs();
-int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on);
+int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on,struct VideoFeedSettings videosettings);
 int FeedReceiveLoopAlive(int feed_num);
 int PauseFeed(int feednum);
 int UnpauseFeed(int feednum);
