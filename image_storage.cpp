@@ -28,7 +28,7 @@
 int ReadPPM(char * filename,struct Image * pic)
 {
     FILE *pf=0;
-    pf = fopen(filename,"wb");
+    pf = fopen(filename,"rb");
 
     if (pf!=0 )
     {
@@ -36,7 +36,7 @@ int ReadPPM(char * filename,struct Image * pic)
         unsigned int w, h, d;
         int r;
 
-        if (pf == 0) return 0;
+        if (pf == 0) { fprintf(stderr,"Thats very weird , file just died..\n"); fclose(pf); return 0; }
         t = fgets(buf, PPMREADBUFLEN, pf);
         if ( (t == 0) || ( strncmp(buf, "P6\n", 3) != 0 ) ) { fclose(pf); return 0; }
         do
