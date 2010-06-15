@@ -43,6 +43,7 @@ int main()
     printf("Creating a null setting structure , we want default video settings!");
     struct VideoFeedSettings feedsettings={0};
 
+
     if ( InitVideoFeed(0,"/dev/video0",320,240,1,feedsettings)==1  ) { printf(" .. done \n"); } else
                                                                      { printf(" .. failed \n"); return 0; }
 

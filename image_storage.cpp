@@ -33,10 +33,9 @@ int ReadPPM(char * filename,struct Image * pic)
     if (pf!=0 )
     {
         char buf[PPMREADBUFLEN], *t;
-        unsigned int w, h, d;
-        int r;
+        unsigned int w=0, h=0, d=0;
+        int r=0;
 
-        if (pf == 0) { fprintf(stderr,"Thats very weird , file just died..\n"); fclose(pf); return 0; }
         t = fgets(buf, PPMREADBUFLEN, pf);
         if ( (t == 0) || ( strncmp(buf, "P6\n", 3) != 0 ) ) { fclose(pf); return 0; }
         do

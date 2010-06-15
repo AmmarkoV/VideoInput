@@ -207,9 +207,47 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on,
      videosettings contains settings for the following 3 lines of code
      */
                                           /*  MAY NEED TO CHANGE THEM ACCORDING TO USB*/
-     camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-     camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY; //V4L2_PIX_FMT_RGB24; //V4L2_PIX_FMT_YUV420;
-     camera_feeds[inpt].fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
+
+     switch (videosettings.EncodingType)
+     {
+         case 1 :
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+         break;
+         default :
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+         break;
+     };
+
+     switch (videosettings.PixelFormat)
+     {
+         case 1 :
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
+         break;
+         case 2 :
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+         break;
+         case 3 :
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+         break;
+         default :
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
+         break;
+     };
+
+     switch (videosettings.FieldType)
+     {
+         case 1 :
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+         break;
+         default :
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+         break;
+     };
+
+
+     // camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+     // camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY; //V4L2_PIX_FMT_RGB24; //V4L2_PIX_FMT_YUV420;
+     // camera_feeds[inpt].fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
 
       camera_feeds[inpt].v4l2_intf = new V4L2(camera_feeds[inpt].videoinp, io);
