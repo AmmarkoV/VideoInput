@@ -37,6 +37,7 @@
 #define WORKING 5
 #define NO_VIDEO_AVAILIABLE 6
 
+char * VIDEOINPT_VERSION=(char *) "0.266 UNSTABLE";
 int increase_priority=0;
 
 struct Video
@@ -64,7 +65,8 @@ struct Video
 
   /* THREADING DATA */
   int thread_alive_flag;
-  int snap_lock;
+  int snap_paused; /* If set to 1 Will continue to snap frames but not save the reference ( that way video loop wont die out ) */
+  int snap_lock; /* If set to 1 Will not snap frames at all ( video loop will die out after a while ) */
   int stop_snap_loop;
   pthread_t loop_thread;
 };
@@ -74,17 +76,14 @@ struct ThreadPassParam
     int feednum;
 };
 
-
 int total_cameras=0;
 struct Video * camera_feeds=0;
 char video_simulation_path[256]={0};
 io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_USERPTR;
 
-
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.263 UNSTABLE";
 
 char * VideoInput_Version()
 {
@@ -95,14 +94,12 @@ char * VideoInput_Version()
 char FileExists(char * filename)
 {
 FILE *fp = fopen(filename,"r");
- if( fp ) { // exists
+ if( fp ) { /* exists */
             fclose(fp);
             return 1;
           }
           else
-          {
-           // doesnt exist
-          }
+          { /* doesnt exist */ }
  return 0;
 }
 
@@ -207,6 +204,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
    camera_feeds[inpt].size_of_frame=width*height*(bitdepth/8);
    camera_feeds[inpt].video_simulation=LIVE_ON;
    camera_feeds[inpt].thread_alive_flag=0;
+   camera_feeds[inpt].snap_paused=0;
    camera_feeds[inpt].snap_lock=0;
 
    camera_feeds[inpt].frame_decoded=0;
@@ -296,6 +294,7 @@ int PauseFeed(int feednum)
 {
  if (!VideoInputsOk()) return 0;
  //camera_feeds[feednum].snap_lock=1;
+ camera_feeds[feednum].snap_paused=1;
  return 1;
 }
 
@@ -303,6 +302,7 @@ int UnpauseFeed(int feednum)
 {
  if (!VideoInputsOk()) return 0;
  //camera_feeds[feednum].snap_lock=0;
+ camera_feeds[feednum].snap_paused=0;
  return 1;
 }
 
@@ -411,7 +411,7 @@ void RecordInLoop(int feed_num)
     fprintf(stderr,"called record in loop\n");
     unsigned int mode_started = camera_feeds[feed_num].video_simulation;
     camera_feeds[feed_num].video_simulation = WORKING;
-    //camera_feeds[feed_num].snap_lock=1;
+    camera_feeds[feed_num].snap_lock=1;
     fprintf(stderr,"trying to memcpy\n");
     fflush(0);
     usleep(10);
@@ -419,7 +419,7 @@ void RecordInLoop(int feed_num)
     memcpy(camera_feeds[feed_num].rec_video.pixels,ReturnDecodedLiveFrame(feed_num),camera_feeds[feed_num].size_of_frame);
     fprintf(stderr,"survived memcpy\n");
     fflush(0);
-    //camera_feeds[feed_num].snap_lock=0;
+    camera_feeds[feed_num].snap_lock=0;
 
 
     char store_path[256]={0};
@@ -477,7 +477,10 @@ void * SnapLoop( void * ptr)
 
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!
-          camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+          if ( camera_feeds[feed_num].snap_paused == 1 )
+           { camera_feeds[feed_num].v4l2_intf->getFrame(); /*Get frame only to keep V4L2 running ? */ } else
+           { camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame(); }
+
           camera_feeds[feed_num].frame_decoded=0; //<- This signals that we have a new frame that MAY need to be decoded to RGB24
        } else
        {

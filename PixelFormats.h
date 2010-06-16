@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <linux/videodev2.h>
 
-unsigned char *yuv420p_to_rgb24(int width, int height,
-				unsigned char *pIn0, unsigned char *pOut0=NULL);
-unsigned char *yuv420_to_rgb24(int width, int height,
-			       unsigned char *pIn0, unsigned char *pOut0=NULL);
-unsigned char *yuv411p_to_rgb24(int width, int height,
-				unsigned char *pIn0, unsigned char *pOut0=NULL);
+
+int VideoFormatNeedsDecoding(int videoformat,int bitdepth);
+
+void PrintOutPixelFormat(int pix_format);
+void PrintOutCaptureMode(int cap_mode);
+void PrintOutFieldType(int field_type);
 
 //unsigned char *YUV420_to_RGB24(unsigned char *b1,int width,int height,unsigned char *b2=NULL);
