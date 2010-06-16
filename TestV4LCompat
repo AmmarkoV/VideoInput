@@ -1,3 +1,6 @@
 #!/bin/bash
+echo "Trying to test VideoInput library with VideoInputTester AND V4L Compatiblity"
+echo "if the files dont run , you may need to execute ./make to compile them for a 32 bit"
+echo "the binaries provided are for x64 computers"
 LD_PRELOAD=/usr/lib/libv4l/v4l2convert.so  VideoInputTester/bin/Release/VideoInputTester
 exit 0
