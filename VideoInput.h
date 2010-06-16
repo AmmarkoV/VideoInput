@@ -25,6 +25,20 @@
 extern "C" {
 #endif
 
+
+enum input_modes
+{
+   LIVE_ON=0,
+   RECORDING_ON,
+   RECORDING_ONE_ON,
+   PLAYBACK_ON,
+   PLAYBACK_ON_LOADED,
+   WORKING,
+   NO_VIDEO_AVAILIABLE
+};
+
+
+
 struct VideoFeedSettings
 {
    unsigned int EncodingType;
@@ -98,8 +112,8 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 int FeedReceiveLoopAlive(int feed_num);
 int PauseFeed(int feednum);
 int UnpauseFeed(int feednum);
-//int InitVideoInput(char * vid1 , char * vid2,char snapshots_on);
-//int CloseVideoInput();
+
+
 unsigned char * GetFrame(int webcam_id);
 
 // Playback / Recording

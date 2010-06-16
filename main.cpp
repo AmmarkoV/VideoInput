@@ -37,6 +37,8 @@
 #define WORKING 5
 #define NO_VIDEO_AVAILIABLE 6
 
+
+
 char * VIDEOINPT_VERSION=(char *) "0.269 RGB24 YUYV compatible";
 int increase_priority=0;
 
@@ -79,7 +81,7 @@ struct ThreadPassParam
 int total_cameras=0;
 struct Video * camera_feeds=0;
 char video_simulation_path[256]={0};
-io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_USERPTR;
+io_method io=IO_METHOD_MMAP; /*IO_METHOD_MMAP;  IO_METHOD_READ; IO_METHOD_USERPTR;*/
 
 void * SnapLoop(void *ptr );
 
@@ -116,7 +118,7 @@ int InitVideoInputs(int numofinputs)
 {
     if (total_cameras>0) { fprintf(stderr,"Error , Video Inputs already active ?\n total_cameras=%u\n",total_cameras); return 0;}
 
-    //First allocate memory for V4L2 Structures  , etc
+    /*First allocate memory for V4L2 Structures  , etc*/
     camera_feeds = (struct Video * ) malloc ( sizeof( struct Video ) * (numofinputs+1) );
     if (camera_feeds==0) { fprintf(stderr,"Error , cannot allocate memory for %u video inputs \n",total_cameras); return 0;}
 
@@ -129,7 +131,7 @@ int InitVideoInputs(int numofinputs)
           camera_feeds[i].v4l2_intf=0;
       }
 
-    //Lets Refresh USB devices list :)
+    /*Lets Refresh USB devices list :)*/
     int ret=system((const char * ) "lsusb");
     if ( ret == 0 ) { printf("Syscall USB list success\n"); }
 
@@ -137,7 +139,7 @@ int InitVideoInputs(int numofinputs)
     ret=system((const char * ) "ls /dev | grep video");
     if ( ret == 0 ) { printf("Success receiving video device list \n"); }
 
-    //We want higher priority now..! :)
+    /*We want higher priority now..! :)*/
     if ( increase_priority == 1 )
     {
      if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
@@ -198,7 +200,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
    if (!VideoInputsOk()) return 0;
    if ( (!FileExists(viddev)) ) { fprintf(stderr,"Super Quick linux check for the webcam (%s) returned false.. please connect V4L2 compatible camera!\n",viddev); return 0; }
 
-   camera_feeds[inpt].videoinp = viddev; //px (char *) "/dev/video0";
+   camera_feeds[inpt].videoinp = viddev; /*i.e. (char *) "/dev/video0";*/
    camera_feeds[inpt].width = width;
    camera_feeds[inpt].height = height;
    camera_feeds[inpt].size_of_frame=width*height*(bitdepth/8);
@@ -235,7 +237,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
        camera_feeds[inpt].decoded_pixels=0;
        if (VideoFormatNeedsDecoding(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
        {
-          //NEEDS TO DECODE TO RGB 24 , allocate memory
+          /*NEEDS TO DECODE TO RGB 24 , allocate memory*/
           camera_feeds[inpt].decoded_pixels = (char * ) malloc( width*height*3 + 1);
           memset(camera_feeds[inpt].decoded_pixels, '\0',width*height*3);
        }
@@ -257,7 +259,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
        }
 
    printf("Enabling Snapshots!\n");
-   camera_feeds[inpt].rec_video.pixels = 0; // Xreiazontai etsi wste an den theloume snapshots na min crasharei to sympan
+   camera_feeds[inpt].rec_video.pixels = 0; /* Xreiazontai etsi wste an den theloume snapshots na min crasharei to sympan*/
    camera_feeds[inpt].rec_video.size_x=width;
    camera_feeds[inpt].rec_video.size_y=height;
    camera_feeds[inpt].rec_video.depth=3;
@@ -266,10 +268,10 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
     {
         camera_feeds[inpt].rec_video.pixels = (char * ) malloc(camera_feeds[inpt].rec_video.image_size + 1);
     }
-    // INIT MEMORY FOR SNAPSHOTS !
+    /* INIT MEMORY FOR SNAPSHOTS !*/
 
 
-    // STARTING VIDEO RECEIVE THREAD!
+    /* STARTING VIDEO RECEIVE THREAD!*/
     camera_feeds[inpt].stop_snap_loop=0;
     camera_feeds[inpt].loop_thread=0;
 
@@ -293,7 +295,6 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 int PauseFeed(int feednum)
 {
  if (!VideoInputsOk()) return 0;
- //camera_feeds[feednum].snap_lock=1;
  camera_feeds[feednum].snap_paused=1;
  return 1;
 }
@@ -301,7 +302,6 @@ int PauseFeed(int feednum)
 int UnpauseFeed(int feednum)
 {
  if (!VideoInputsOk()) return 0;
- //camera_feeds[feednum].snap_lock=0;
  camera_feeds[feednum].snap_paused=0;
  return 1;
 }
@@ -310,7 +310,7 @@ int UnpauseFeed(int feednum)
 int DecodePixels(int webcam_id)
 {
 if ( camera_feeds[webcam_id].frame_decoded==0)
-                                             { //THIS FRAME HASN`T BEEN DECODED YET!
+                                             { /*THIS FRAME HASN`T BEEN DECODED YET!*/
                                                int i=Convert2RGB24( (unsigned char*)camera_feeds[webcam_id].frame,
                                                                     (unsigned char*)camera_feeds[webcam_id].decoded_pixels,
                                                                     camera_feeds[webcam_id].width,
@@ -330,15 +330,18 @@ if ( camera_feeds[webcam_id].frame_decoded==0)
 
 unsigned char * ReturnDecodedLiveFrame(int webcam_id)
 {
+   /*
+          THIS FRAME DECIDES IF THE VIDEO FORMAT NEEDS DECODING OR CAN BE RETURNED RAW FROM THE DEVICE
+          SEE PixelFormats.cpp / PixelFormatConversions.cpp
+   */
+
    if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
                                           {
-                                            //VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24
-                                            //printf("Passing by Decoding Pixels to RGB24\n");
+                                            /*VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24*/
                                             if ( DecodePixels(webcam_id)==0 ) return 0;
                                             return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
                                           } else
                                           {
-                                            //printf("Passing RAW Frame\n");
                                             return (unsigned char *) camera_feeds[webcam_id].frame;
                                           }
    return 0;
@@ -414,7 +417,7 @@ void RecordInLoop(int feed_num)
     usleep(5);
 
     memcpy(camera_feeds[feed_num].rec_video.pixels,ReturnDecodedLiveFrame(feed_num),camera_feeds[feed_num].rec_video.image_size);
-    // Return DecodedLiveFrame will always return an RGB24 image , rec_video always on RGB24 size so we use camera_feeds[feed_num].rec_video.image_size
+    /* Return DecodedLiveFrame will always return an RGB24 image , rec_video always on RGB24 size so we use camera_feeds[feed_num].rec_video.image_size*/
     camera_feeds[feed_num].snap_lock=0;
 
 
@@ -455,7 +458,7 @@ void * SnapLoop( void * ptr)
        return 0;
      }
 
-   //We want higher priority now..! :)
+   /*We want higher priority now..! :)*/
     if ( increase_priority == 1 )
     {
      if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
@@ -471,7 +474,7 @@ void * SnapLoop( void * ptr)
        usleep(5); /* 20ms sleep time per sample , its a good value for 2 cameras*/
 
        if ( camera_feeds[feed_num].snap_lock == 0 )
-       { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!
+       { /* WE DONT NEED THE SNAPSHOT TO BE LOCKED!*/
           if ( camera_feeds[feed_num].snap_paused == 1 )
            { camera_feeds[feed_num].v4l2_intf->getFrame(); /*Get frame only to keep V4L2 running ? */ } else
            { camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame(); }
@@ -503,14 +506,15 @@ void * SnapLoop( void * ptr)
    return ( void * ) 0 ;
 }
 
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// SNAPSHOT RECORDING
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  * SNAPSHOT RECORDING
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 void Play(char * filename)
 {
     if (!VideoInputsOk()) return;
     if ( strlen( filename ) > 250 ) return;
 
-    //Prepare
+    /*Prepare*/
     strcpy(video_simulation_path,filename);
 
 
@@ -555,5 +559,6 @@ unsigned int VideoSimulationState()
   if (!VideoInputsOk()) return NO_VIDEO_AVAILIABLE;
   return camera_feeds[0].video_simulation;
 }
-// SNAPSHOT RECORDING
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  * SNAPSHOT RECORDING
+  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
