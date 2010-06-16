@@ -69,8 +69,12 @@ int main()
 
 
 
-    printf("I Will now attempt to catch the frame \n");
-    pixels = (unsigned char *) GetFrame(0);
+    printf("I Will now attempt to catch 10 frames \n");
+    int i , ilim= 10;
+    for ( i=0; i<ilim; i++)
+     {
+       pixels = (unsigned char *) GetFrame(0);
+     }
 
     if (pixels == 0 ) { printf("Something was not right and we got back a zero frame , test failed\n");
                         CloseVideoInputs();

@@ -211,14 +211,13 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 
    camera_feeds[inpt].frame_decoded=0;
    camera_feeds[inpt].decoded_pixels=0;
-   camera_feeds[inpt].input_pixel_format=videosettings.PixelFormat;
-   camera_feeds[inpt].input_pixel_format_bitdepth=bitdepth;
 
    CLEAR (camera_feeds[inpt].fmt);
    camera_feeds[inpt].fmt.fmt.pix.width       = width;
    camera_feeds[inpt].fmt.fmt.pix.height      = height;
 
 
+   /* IF videosettings is null set default capture mode ( VIDEO CAPTURE , YUYV mode , INTERLACED )  */
       if ( videosettings.EncodingType==0 ) { camera_feeds[inpt].fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; } else
                                            { camera_feeds[inpt].fmt.type = (v4l2_buf_type) videosettings.EncodingType; }
 
@@ -227,6 +226,10 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 
       if ( videosettings.FieldType==0 ) { camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED; } else
                                         { camera_feeds[inpt].fmt.fmt.pix.field = (v4l2_field) videosettings.FieldType; }
+
+      camera_feeds[inpt].input_pixel_format=camera_feeds[inpt].fmt.fmt.pix.pixelformat;
+      camera_feeds[inpt].input_pixel_format_bitdepth=bitdepth;
+
 
       PrintOutCaptureMode(camera_feeds[inpt].fmt.type);
       PrintOutPixelFormat(camera_feeds[inpt].fmt.fmt.pix.pixelformat);
@@ -237,6 +240,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
        {
           //DECODE TO RGB 24
           camera_feeds[inpt].decoded_pixels = (char * ) malloc( width*height*3 + 1);
+          memset(camera_feeds[inpt].decoded_pixels, '\0',width*height*3);
        }
 
 
@@ -329,10 +333,12 @@ unsigned char * ReturnDecodedLiveFrame(int webcam_id)
    if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
                                           {
                                             //VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24
+                                            printf("Passing by Decoding Pixels to RGB24\n");
                                             if ( DecodePixels(webcam_id)==0 ) return 0;
                                             return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
                                           } else
                                           {
+                                            printf("Passing RAW Frame\n");
                                             return (unsigned char *) camera_feeds[webcam_id].frame;
                                           }
    return 0;
@@ -349,17 +355,9 @@ unsigned char * GetFrame(int webcam_id)
      {
       handled=1;
       if (total_cameras>webcam_id) {
-                                    /* if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
-                                          {
-                                            //VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24
-                                            if ( DecodePixels(webcam_id)==0 ) return 0;
-                                            return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
-                                          } else
-                                          {
-                                            return (unsigned char *) camera_feeds[webcam_id].frame;
-                                          }*/
-                                       return ReturnDecodedLiveFrame(webcam_id);
-                                   } else
+                                    return ReturnDecodedLiveFrame(webcam_id);
+                                   }
+                                     else
                                    { return 0; }
      }
     break;
