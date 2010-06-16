@@ -228,7 +228,6 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
       camera_feeds[inpt].input_pixel_format=camera_feeds[inpt].fmt.fmt.pix.pixelformat;
       camera_feeds[inpt].input_pixel_format_bitdepth=bitdepth;
 
-
       PrintOutCaptureMode(camera_feeds[inpt].fmt.type);
       PrintOutPixelFormat(camera_feeds[inpt].fmt.fmt.pix.pixelformat);
       PrintOutFieldType(camera_feeds[inpt].fmt.fmt.pix.field);
@@ -236,7 +235,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
        camera_feeds[inpt].decoded_pixels=0;
        if (VideoFormatNeedsDecoding(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
        {
-          //DECODE TO RGB 24
+          //NEEDS TO DECODE TO RGB 24 , allocate memory
           camera_feeds[inpt].decoded_pixels = (char * ) malloc( width*height*3 + 1);
           memset(camera_feeds[inpt].decoded_pixels, '\0',width*height*3);
        }
@@ -264,7 +263,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
    camera_feeds[inpt].rec_video.depth=3;
    if ( snapshots_on == 1 )
     {
-        camera_feeds[inpt].rec_video.pixels = (char * ) malloc( camera_feeds[inpt].size_of_frame + 1);
+        camera_feeds[inpt].rec_video.pixels = (char * ) malloc( width*height*3 + 1);
     }
     // INIT MEMORY FOR SNAPSHOTS !
 
