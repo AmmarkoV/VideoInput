@@ -42,7 +42,7 @@ int main()
 
     printf("Creating setting structure \n");
     struct VideoFeedSettings feedsettings={0};
-    feedsettings.PixelFormat
+    //feedsettings.PixelFormat=
 
     char SNAPSHOTS_ON=1;
     if ( InitVideoFeed(0,"/dev/video0",320,240,16,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else

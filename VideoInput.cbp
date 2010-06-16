@@ -37,6 +37,8 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Unit filename="PixelFormatConversions.cpp" />
+		<Unit filename="PixelFormatConversions.h" />
 		<Unit filename="PixelFormats.cpp" />
 		<Unit filename="PixelFormats.h" />
 		<Unit filename="PrintV4L2.cpp" />

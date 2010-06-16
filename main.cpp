@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include "V4L2.h"
 #include "PixelFormats.h"
+#include "PixelFormatConversions.h"
 #include "image_storage.h"
 #include <unistd.h>
 
@@ -51,9 +52,11 @@ struct Video
   unsigned int size_of_frame;
   V4L2 *v4l2_intf;
 
-  /* ADD HERE */
+  /* DATA NEEDED FOR DECODERS TO WORK */
   unsigned int input_pixel_format;
   unsigned int input_pixel_format_bitdepth;
+  char * decoded_pixels;
+  int frame_decoded;
 
   /*VIDEO SIMULATION DATA*/
   struct Image rec_video;
@@ -103,11 +106,6 @@ FILE *fp = fopen(filename,"r");
  return 0;
 }
 
-void DebugSay(char * what)
-{
- printf(" %s\n",what);
- return;
-}
 
 int VideoInputsOk()
 {
@@ -172,6 +170,8 @@ int CloseVideoInputs()
         usleep(30);
         camera_feeds[i].v4l2_intf->freeBuffers();
         usleep(30);
+
+        if ( camera_feeds[i].decoded_pixels !=0 ) free( camera_feeds[i].decoded_pixels );
         if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
         if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
        } else
@@ -209,163 +209,41 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
    camera_feeds[inpt].thread_alive_flag=0;
    camera_feeds[inpt].snap_lock=0;
 
+   camera_feeds[inpt].frame_decoded=0;
+   camera_feeds[inpt].decoded_pixels=0;
+   camera_feeds[inpt].input_pixel_format=videosettings.PixelFormat;
+   camera_feeds[inpt].input_pixel_format_bitdepth=bitdepth;
+
    CLEAR (camera_feeds[inpt].fmt);
    camera_feeds[inpt].fmt.fmt.pix.width       = width;
    camera_feeds[inpt].fmt.fmt.pix.height      = height;
 
-     /* TODO
-     videosettings contains settings for the following 3 lines of code
-     */
-                                          /*  MAY NEED TO CHANGE THEM ACCORDING TO USB*/
 
-     DebugSay((char *)"Setting device parameters");
-     switch (videosettings.EncodingType)
-     {
-         case 1 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-         break;
-         case 2 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-         break;
-         case 3 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-         break;
-         case 4 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_OVERLAY;
-         break;
-         case 5 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VBI_CAPTURE;
-         break;
-         case 6 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VBI_OUTPUT;
-         break;
-         case 7 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_SLICED_VBI_CAPTURE;
-         break;
-         case 8 :
-          DebugSay((char *)"Setting capture mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_SLICED_VBI_OUTPUT;
-         break;
-         default :
-          DebugSay((char *)"Default mode : Setting camera mode to Video Capture");
-          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-         break;
-     };
+      if ( videosettings.EncodingType==0 ) { camera_feeds[inpt].fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; } else
+                                           { camera_feeds[inpt].fmt.type = (v4l2_buf_type) videosettings.EncodingType; }
 
-      /*
-        unsigned int input_pixel_format;
-        unsigned int input_pixel_format_bitdepth;
-      */
-      fprintf(stderr,"TODO ADD PIXEL_FORMATS / BIT DEPTHS , INCLUDE RGB24 CONVERTERS");
+      if ( videosettings.PixelFormat==0 ) { camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; } else
+                                          { camera_feeds[inpt].fmt.fmt.pix.pixelformat = videosettings.PixelFormat; }
 
-      if ( videosettings.PixelFormat==0 ) {
-                                           DebugSay((char *)"Default pixel format : Setting pixel format to YUYV");
-                                           camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-                                          // camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-                                          }
-     /*switch (videosettings.PixelFormat)
-     {
+      if ( videosettings.FieldType==0 ) { camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED; } else
+                                        { camera_feeds[inpt].fmt.fmt.pix.field = (v4l2_field) videosettings.FieldType; }
 
-         case 1 :
-          DebugSay((char *)"Setting pixel format to YUYV");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-         break;
-         case 2 :
-          DebugSay((char *)"Setting pixel format to VYUY");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
-         break;
-         case 3 :
-          DebugSay((char *)"Setting pixel format to YUV420");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
-         break;
-         case 4 :
-          DebugSay((char *)"Setting pixel format to RGB24");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-         break;
-         case 5 :
-          DebugSay((char *)"Setting pixel format to BGR24");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_BGR24;
-         break;
-         case 6 :
-          DebugSay((char *)"Setting pixel format to RGB32 ");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB32 ;
-         break;
-         case 7 :
-          DebugSay((char *)"Setting pixel format to YUV32 ");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV32 ;
-         break;
+      PrintOutCaptureMode(camera_feeds[inpt].fmt.type);
+      PrintOutPixelFormat(camera_feeds[inpt].fmt.fmt.pix.pixelformat);
+      PrintOutFieldType(camera_feeds[inpt].fmt.fmt.pix.field);
 
-         case 8 :
-          DebugSay((char *)"Setting pixel format to compressed MJPEG");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-         break;
-         case 9 :
-          DebugSay((char *)"Setting pixel format to compressed JPEG");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
-         break;
-         case 10 :
-          DebugSay((char *)"Setting pixel format to compressed DV");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_DV;
-         break;
-         case 11 :
-          DebugSay((char *)"Setting pixel format to compressed MPEG ");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MPEG ;
-         break;
-
-         default :
-          //DebugSay((char *)"Default pixel format : Setting pixel format to VYUY");
-          //camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
-          DebugSay((char *)"Default pixel format : Setting pixel format to YUYV");
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-         break;
-     };*/
-
-     switch (videosettings.FieldType)
-     {
-         case 1 :
-          DebugSay((char *)"Setting pixel field to V4L2_FIELD_TOP");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_TOP;
-         break;
-         case 2 :
-          DebugSay((char *)"Setting pixel field to V4L2_FIELD_INTERLACED");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-         break;
-         case 3 :
-          DebugSay((char *)"Setting pixel field to V4L2_FIELD_INTERLACED_TB");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED_TB;
-         break;
-         case 4 :
-          DebugSay((char *)"Setting pixel field to V4L2_FIELD_INTERLACED_BT");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED_BT;
-         break;
-         case 5 :
-          DebugSay((char *)"Setting pixel field to V4L2_FIELD_SEQ_TB");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_SEQ_TB;
-         break;
-         case 6 :
-          DebugSay((char *)"Setting pixel field to V4L2_FIELD_SEQ_BT");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_SEQ_BT;
-         break;
-
-         default :
-          DebugSay((char *)"Default field format : Setting pixel field to V4L2_FIELD_INTERLACED");
-          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-         break;
-     };
+       camera_feeds[inpt].decoded_pixels=0;
+       if (VideoFormatNeedsDecoding(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
+       {
+          //DECODE TO RGB 24
+          camera_feeds[inpt].decoded_pixels = (char * ) malloc( width*height*3 + 1);
+       }
 
 
 
-
-      DebugSay((char *)"Starting camera , if it segfaults consider running LD_PRELOAD=/usr/lib/libv4l/v4l2convert.so  executable_name");
-      DebugSay((char *)"Your webcam might not support V4L2!");
-      DebugSay((char *)"------------------------------------------------");
+      fprintf(stderr,(char *)"Starting camera , if it segfaults consider running \nLD_PRELOAD=/usr/lib/libv4l/v4l2convert.so  executable_name\n");
+      fprintf(stderr,(char *)"Your webcam might not support V4L2!\n");
+      fprintf(stderr,(char *)"------------------------------------------------\n");
       camera_feeds[inpt].v4l2_intf = new V4L2(camera_feeds[inpt].videoinp, io);
        if ( camera_feeds[inpt].v4l2_intf->set(camera_feeds[inpt].fmt) == 0 ) { fprintf(stderr,"Device does not support settings:\n"); return 0; }
          else
@@ -425,6 +303,41 @@ int UnpauseFeed(int feednum)
 }
 
 
+int DecodePixels(int webcam_id)
+{
+if ( camera_feeds[webcam_id].frame_decoded==0)
+                                             { //THIS FRAME HASN`T BEEN DECODED YET!
+                                               int i=Convert2RGB24( (char*)camera_feeds[webcam_id].frame,
+                                                                    (char*)camera_feeds[webcam_id].decoded_pixels,
+                                                                    camera_feeds[webcam_id].width,
+                                                                    camera_feeds[webcam_id].height,
+                                                                    camera_feeds[webcam_id].input_pixel_format,
+                                                                    camera_feeds[webcam_id].input_pixel_format_bitdepth );
+
+                                               if ( i == 0 ) { /* UNABLE TO PERFORM CONVERSION */
+                                                                return 0; } else
+
+                                                              { /* SUCCESSFUL CONVERSION */
+                                                                  camera_feeds[webcam_id].frame_decoded=1;
+                                                              }
+                                             }
+ return 1;
+}
+
+unsigned char * ReturnDecodedLiveFrame(int webcam_id)
+{
+   if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
+                                          {
+                                            //VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24
+                                            if ( DecodePixels(webcam_id)==0 ) return 0;
+                                            return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
+                                          } else
+                                          {
+                                            return (unsigned char *) camera_feeds[webcam_id].frame;
+                                          }
+   return 0;
+}
+
 unsigned char * GetFrame(int webcam_id)
 {
   if (!VideoInputsOk()) return 0;
@@ -435,7 +348,18 @@ unsigned char * GetFrame(int webcam_id)
     case  LIVE_ON :
      {
       handled=1;
-      if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].frame; } else
+      if (total_cameras>webcam_id) {
+                                    /* if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
+                                          {
+                                            //VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24
+                                            if ( DecodePixels(webcam_id)==0 ) return 0;
+                                            return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
+                                          } else
+                                          {
+                                            return (unsigned char *) camera_feeds[webcam_id].frame;
+                                          }*/
+                                       return ReturnDecodedLiveFrame(webcam_id);
+                                   } else
                                    { return 0; }
      }
     break;
@@ -494,7 +418,7 @@ void RecordInLoop(int feed_num)
     fflush(0);
     usleep(10);
 
-    memcpy(camera_feeds[feed_num].rec_video.pixels,camera_feeds[feed_num].frame,camera_feeds[feed_num].size_of_frame);
+    memcpy(camera_feeds[feed_num].rec_video.pixels,ReturnDecodedLiveFrame(feed_num),camera_feeds[feed_num].size_of_frame);
     fprintf(stderr,"survived memcpy\n");
     fflush(0);
     //camera_feeds[feed_num].snap_lock=0;
@@ -556,6 +480,7 @@ void * SnapLoop( void * ptr)
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!
           camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+          camera_feeds[feed_num].frame_decoded=0; //<- This signals that we have a new frame that MAY need to be decoded to RGB24
        } else
        {
          /* FEED LOCKED */
