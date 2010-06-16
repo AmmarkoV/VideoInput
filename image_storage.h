@@ -31,6 +31,7 @@ struct Image
   unsigned int size_x;
   unsigned int size_y;
   unsigned int depth;
+  unsigned int image_size;
 };
 
 

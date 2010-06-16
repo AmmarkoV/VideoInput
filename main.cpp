@@ -37,7 +37,7 @@
 #define WORKING 5
 #define NO_VIDEO_AVAILIABLE 6
 
-char * VIDEOINPT_VERSION=(char *) "0.266 UNSTABLE";
+char * VIDEOINPT_VERSION=(char *) "0.269 RGB24 YUYV compatible";
 int increase_priority=0;
 
 struct Video
@@ -261,9 +261,10 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
    camera_feeds[inpt].rec_video.size_x=width;
    camera_feeds[inpt].rec_video.size_y=height;
    camera_feeds[inpt].rec_video.depth=3;
+   camera_feeds[inpt].rec_video.image_size=camera_feeds[inpt].rec_video.size_x * camera_feeds[inpt].rec_video.size_y * camera_feeds[inpt].rec_video.depth;
    if ( snapshots_on == 1 )
     {
-        camera_feeds[inpt].rec_video.pixels = (char * ) malloc( width*height*3 + 1);
+        camera_feeds[inpt].rec_video.pixels = (char * ) malloc(camera_feeds[inpt].rec_video.image_size + 1);
     }
     // INIT MEMORY FOR SNAPSHOTS !
 
@@ -310,8 +311,8 @@ int DecodePixels(int webcam_id)
 {
 if ( camera_feeds[webcam_id].frame_decoded==0)
                                              { //THIS FRAME HASN`T BEEN DECODED YET!
-                                               int i=Convert2RGB24( (char*)camera_feeds[webcam_id].frame,
-                                                                    (char*)camera_feeds[webcam_id].decoded_pixels,
+                                               int i=Convert2RGB24( (unsigned char*)camera_feeds[webcam_id].frame,
+                                                                    (unsigned char*)camera_feeds[webcam_id].decoded_pixels,
                                                                     camera_feeds[webcam_id].width,
                                                                     camera_feeds[webcam_id].height,
                                                                     camera_feeds[webcam_id].input_pixel_format,
@@ -407,17 +408,14 @@ unsigned char * GetFrame(int webcam_id)
 
 void RecordInLoop(int feed_num)
 {
-    fprintf(stderr,"called record in loop\n");
     unsigned int mode_started = camera_feeds[feed_num].video_simulation;
+
     camera_feeds[feed_num].video_simulation = WORKING;
     camera_feeds[feed_num].snap_lock=1;
-    fprintf(stderr,"trying to memcpy\n");
-    fflush(0);
-    usleep(10);
+    usleep(5);
 
-    memcpy(camera_feeds[feed_num].rec_video.pixels,ReturnDecodedLiveFrame(feed_num),camera_feeds[feed_num].size_of_frame);
-    fprintf(stderr,"survived memcpy\n");
-    fflush(0);
+    memcpy(camera_feeds[feed_num].rec_video.pixels,ReturnDecodedLiveFrame(feed_num),camera_feeds[feed_num].rec_video.image_size);
+    // Return DecodedLiveFrame will always return an RGB24 image , rec_video always on RGB24 size so we use camera_feeds[feed_num].rec_video.image_size
     camera_feeds[feed_num].snap_lock=0;
 
 
@@ -427,7 +425,6 @@ void RecordInLoop(int feed_num)
 
     strcpy(store_path,video_simulation_path);
     strcat(store_path,last_part);
-    fprintf(stderr,"WritePPM\n");
     WritePPM(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
 
