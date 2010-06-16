@@ -51,6 +51,10 @@ struct Video
   unsigned int size_of_frame;
   V4L2 *v4l2_intf;
 
+  /* ADD HERE */
+  unsigned int input_pixel_format;
+  unsigned int input_pixel_format_bitdepth;
+
   /*VIDEO SIMULATION DATA*/
   struct Image rec_video;
   int video_simulation;
@@ -77,7 +81,7 @@ io_method io=IO_METHOD_MMAP; //IO_METHOD_MMAP; // IO_METHOD_READ; //IO_METHOD_US
 void * SnapLoop(void *ptr );
 
 
-char * VIDEOINPT_VERSION=(char *) "0.263";
+char * VIDEOINPT_VERSION=(char *) "0.263 UNSTABLE";
 
 char * VideoInput_Version()
 {
@@ -97,6 +101,12 @@ FILE *fp = fopen(filename,"r");
            // doesnt exist
           }
  return 0;
+}
+
+void DebugSay(char * what)
+{
+ printf(" %s\n",what);
+ return;
 }
 
 int VideoInputsOk()
@@ -185,7 +195,7 @@ int CloseVideoInputs()
 }
 
 
-int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on,struct VideoFeedSettings videosettings)
+int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings)
 {
    printf("Initializing Video Feed %u ( %s ) @ %u/%u \n",inpt,viddev,width,height);
    if (!VideoInputsOk()) return 0;
@@ -194,62 +204,168 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,char snapshots_on,
    camera_feeds[inpt].videoinp = viddev; //px (char *) "/dev/video0";
    camera_feeds[inpt].width = width;
    camera_feeds[inpt].height = height;
-   camera_feeds[inpt].size_of_frame=width*height*3;
+   camera_feeds[inpt].size_of_frame=width*height*(bitdepth/8);
    camera_feeds[inpt].video_simulation=LIVE_ON;
    camera_feeds[inpt].thread_alive_flag=0;
    camera_feeds[inpt].snap_lock=0;
 
-     CLEAR (camera_feeds[inpt].fmt);
-     camera_feeds[inpt].fmt.fmt.pix.width       = width;
-     camera_feeds[inpt].fmt.fmt.pix.height      = height;
+   CLEAR (camera_feeds[inpt].fmt);
+   camera_feeds[inpt].fmt.fmt.pix.width       = width;
+   camera_feeds[inpt].fmt.fmt.pix.height      = height;
 
      /* TODO
      videosettings contains settings for the following 3 lines of code
      */
                                           /*  MAY NEED TO CHANGE THEM ACCORDING TO USB*/
 
+     DebugSay((char *)"Setting device parameters");
      switch (videosettings.EncodingType)
      {
          case 1 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
           camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
          break;
+         case 2 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+         break;
+         case 3 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+         break;
+         case 4 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_OVERLAY;
+         break;
+         case 5 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VBI_CAPTURE;
+         break;
+         case 6 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VBI_OUTPUT;
+         break;
+         case 7 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_SLICED_VBI_CAPTURE;
+         break;
+         case 8 :
+          DebugSay((char *)"Setting capture mode to Video Capture");
+          camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_SLICED_VBI_OUTPUT;
+         break;
          default :
+          DebugSay((char *)"Default mode : Setting camera mode to Video Capture");
           camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
          break;
      };
 
-     switch (videosettings.PixelFormat)
+      /*
+        unsigned int input_pixel_format;
+        unsigned int input_pixel_format_bitdepth;
+      */
+      fprintf(stderr,"TODO ADD PIXEL_FORMATS / BIT DEPTHS , INCLUDE RGB24 CONVERTERS");
+
+      if ( videosettings.PixelFormat==0 ) {
+                                           DebugSay((char *)"Default pixel format : Setting pixel format to YUYV");
+                                           camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+                                          // camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+                                          }
+     /*switch (videosettings.PixelFormat)
      {
+
          case 1 :
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
+          DebugSay((char *)"Setting pixel format to YUYV");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
          break;
          case 2 :
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-         break;
-         case 3 :
-          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
-         break;
-         default :
+          DebugSay((char *)"Setting pixel format to VYUY");
           camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
          break;
-     };
+         case 3 :
+          DebugSay((char *)"Setting pixel format to YUV420");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+         break;
+         case 4 :
+          DebugSay((char *)"Setting pixel format to RGB24");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+         break;
+         case 5 :
+          DebugSay((char *)"Setting pixel format to BGR24");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_BGR24;
+         break;
+         case 6 :
+          DebugSay((char *)"Setting pixel format to RGB32 ");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB32 ;
+         break;
+         case 7 :
+          DebugSay((char *)"Setting pixel format to YUV32 ");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV32 ;
+         break;
+
+         case 8 :
+          DebugSay((char *)"Setting pixel format to compressed MJPEG");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+         break;
+         case 9 :
+          DebugSay((char *)"Setting pixel format to compressed JPEG");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG;
+         break;
+         case 10 :
+          DebugSay((char *)"Setting pixel format to compressed DV");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_DV;
+         break;
+         case 11 :
+          DebugSay((char *)"Setting pixel format to compressed MPEG ");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MPEG ;
+         break;
+
+         default :
+          //DebugSay((char *)"Default pixel format : Setting pixel format to VYUY");
+          //camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY;
+          DebugSay((char *)"Default pixel format : Setting pixel format to YUYV");
+          camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+         break;
+     };*/
 
      switch (videosettings.FieldType)
      {
          case 1 :
+          DebugSay((char *)"Setting pixel field to V4L2_FIELD_TOP");
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_TOP;
+         break;
+         case 2 :
+          DebugSay((char *)"Setting pixel field to V4L2_FIELD_INTERLACED");
           camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
          break;
+         case 3 :
+          DebugSay((char *)"Setting pixel field to V4L2_FIELD_INTERLACED_TB");
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED_TB;
+         break;
+         case 4 :
+          DebugSay((char *)"Setting pixel field to V4L2_FIELD_INTERLACED_BT");
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED_BT;
+         break;
+         case 5 :
+          DebugSay((char *)"Setting pixel field to V4L2_FIELD_SEQ_TB");
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_SEQ_TB;
+         break;
+         case 6 :
+          DebugSay((char *)"Setting pixel field to V4L2_FIELD_SEQ_BT");
+          camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_SEQ_BT;
+         break;
+
          default :
+          DebugSay((char *)"Default field format : Setting pixel field to V4L2_FIELD_INTERLACED");
           camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
          break;
      };
 
 
-     // camera_feeds[inpt].fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-     // camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_VYUY; //V4L2_PIX_FMT_RGB24; //V4L2_PIX_FMT_YUV420;
-     // camera_feeds[inpt].fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
 
+      DebugSay((char *)"Starting camera , if it segfaults consider running LD_PRELOAD=/usr/lib/libv4l/v4l2convert.so  executable_name");
+      DebugSay((char *)"Your webcam might not support V4L2!");
+      DebugSay((char *)"------------------------------------------------");
       camera_feeds[inpt].v4l2_intf = new V4L2(camera_feeds[inpt].videoinp, io);
        if ( camera_feeds[inpt].v4l2_intf->set(camera_feeds[inpt].fmt) == 0 ) { fprintf(stderr,"Device does not support settings:\n"); return 0; }
          else
@@ -370,10 +486,19 @@ unsigned char * GetFrame(int webcam_id)
 
 void RecordInLoop(int feed_num)
 {
+    fprintf(stderr,"called record in loop\n");
     unsigned int mode_started = camera_feeds[feed_num].video_simulation;
     camera_feeds[feed_num].video_simulation = WORKING;
+    //camera_feeds[feed_num].snap_lock=1;
+    fprintf(stderr,"trying to memcpy\n");
+    fflush(0);
+    usleep(10);
 
     memcpy(camera_feeds[feed_num].rec_video.pixels,camera_feeds[feed_num].frame,camera_feeds[feed_num].size_of_frame);
+    fprintf(stderr,"survived memcpy\n");
+    fflush(0);
+    //camera_feeds[feed_num].snap_lock=0;
+
 
     char store_path[256]={0};
     char last_part[6]="0.ppm";
@@ -381,6 +506,7 @@ void RecordInLoop(int feed_num)
 
     strcpy(store_path,video_simulation_path);
     strcat(store_path,last_part);
+    fprintf(stderr,"WritePPM\n");
     WritePPM(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
 
@@ -425,7 +551,7 @@ void * SnapLoop( void * ptr)
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
-       usleep(15); /* 20ms sleep time per sample , its a good value for 2 cameras*/
+       usleep(5); /* 20ms sleep time per sample , its a good value for 2 cameras*/
 
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { // WE DONT NEED THE SNAPSHOT TO BE LOCKED!

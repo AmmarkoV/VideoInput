@@ -1,3 +1,3 @@
 #!/bin/bash
-VideoInputTester/bin/Debug/VideoInputTester
+VideoInputTester/bin/Release/VideoInputTester
 exit 0

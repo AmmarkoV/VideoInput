@@ -8,9 +8,10 @@ gcc -c image_storage.cpp -o image_storage.o
 gcc -c V4L2.cpp -o V4L2.o
 gcc -c PrintV4L2.cpp -o PrintV4L2.o
 gcc -c PixelFormats.cpp -o PixelFormats.o 
+gcc -c PixelFormatConversions.cpp -o PixelFormatConversions.o 
 
 echo "Linking files.."
-ar  rcs libVideoInput.a main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o 
+ar  rcs libVideoInput.a main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o PixelFormatConversions.o 
 
 echo "Cleaning compiled object files.."
 rm main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o

@@ -38,14 +38,15 @@ int main()
 
     printf("I Will now attempt to start sampling on VideoDevice slot 0  :) \n");
     printf("The function called will be : InitVideoFeed(0,\"/dev/video0\",320,240,1);\n");
-    printf("0 is the first device , /dev/video0 the linux location of the device , 320x240 the size of the picture and 1 means enable snapshots! ");
+    printf("0 is the first device , /dev/video0 the linux location of the device , 320x240 the size of the picture and 1 means enable snapshots!\n");
 
-    printf("Creating a null setting structure , we want default video settings!");
+    printf("Creating setting structure \n");
     struct VideoFeedSettings feedsettings={0};
+    feedsettings.PixelFormat
 
-
-    if ( InitVideoFeed(0,"/dev/video0",320,240,1,feedsettings)==1  ) { printf(" .. done \n"); } else
-                                                                     { printf(" .. failed \n"); return 0; }
+    char SNAPSHOTS_ON=1;
+    if ( InitVideoFeed(0,"/dev/video0",320,240,16,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
+                                                                                { printf(" .. failed \n"); return 0; }
 
     printf("Waiting for loop to begin receiving video ");
 
@@ -98,6 +99,15 @@ int main()
 
 
     printf ("I Will now try to write what the camera is seeing in a file called raw.ppm  ... ");
+    fflush(0);
+
+    RecordOne((char*) "raw");
+    sleep(1);
+    printf("Done\n");
+
+    printf ("I Will now try to write what the camera is seeing in a file again in a file called raw.ppm  ... ");
+    fflush(0);
+
     RecordOne((char*) "raw");
     sleep(1);
     printf("Done\n");

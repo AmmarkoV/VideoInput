@@ -490,16 +490,17 @@ void *V4L2::readFrame()
 
   switch (io) {
   case IO_METHOD_READ:
-    if (-1 == read (fd, buffers[0].start, buffers[0].length)) {
+    if (-1 == read (fd, buffers[0].start, buffers[0].length))
+    {
       switch (errno) {
-      case EAGAIN:
-	return NULL;
-      case EIO:
-	/* Could ignore EIO, see spec. */
-	/* fall through */
-      default:
-	errno_exit ("read");
-      }
+                        case EAGAIN:
+	                     return NULL;
+                        case EIO:
+	                       /* Could ignore EIO, see spec. */
+	                              /* fall through */
+                        default:
+	                     errno_exit ("read");
+                     }
     }
     return buffers[0].start;
     break;
@@ -508,20 +509,20 @@ void *V4L2::readFrame()
     CLEAR (buf);
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
-    if (-1 == xioctl (fd, VIDIOC_DQBUF, &buf)) {
+    if (-1 == xioctl (fd, VIDIOC_DQBUF, &buf))
+    {
       switch (errno) {
-      case EAGAIN:
-	return NULL;
-      case EIO:
-	/* Could ignore EIO, see spec. */
-	/* fall through */
-      default:
-	errno_exit ("VIDIOC_DQBUF");
-      }
+                        case EAGAIN:
+	                     return NULL;
+                        case EIO:
+	                        /* Could ignore EIO, see spec. */
+	                               /* fall through */
+                         default:
+	                      errno_exit ("VIDIOC_DQBUF");
+                     }
     }
     assert (buf.index < n_buffers);
-    if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
-      errno_exit ("VIDIOC_QBUF");
+    if (-1 == xioctl (fd, VIDIOC_QBUF, &buf)) errno_exit ("VIDIOC_QBUF");
     return buffers[buf.index].start;
     break;
 
