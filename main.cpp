@@ -333,12 +333,12 @@ unsigned char * ReturnDecodedLiveFrame(int webcam_id)
    if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
                                           {
                                             //VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24
-                                            printf("Passing by Decoding Pixels to RGB24\n");
+                                            //printf("Passing by Decoding Pixels to RGB24\n");
                                             if ( DecodePixels(webcam_id)==0 ) return 0;
                                             return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
                                           } else
                                           {
-                                            printf("Passing RAW Frame\n");
+                                            //printf("Passing RAW Frame\n");
                                             return (unsigned char *) camera_feeds[webcam_id].frame;
                                           }
    return 0;
@@ -373,7 +373,6 @@ unsigned char * GetFrame(int webcam_id)
     case  PLAYBACK_ON :
      {
       handled=1;
-      fprintf(stderr,"Reading Snapshot\n");
 
       char store_path[256]={0};
       char last_part[6]="0.ppm";
