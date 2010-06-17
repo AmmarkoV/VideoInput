@@ -26,6 +26,9 @@
 
 int main()
 {
+    struct timespec prog_start,prog_end;
+    clock_gettime(CLOCK_REALTIME,&prog_start);
+
     printf("Testing VideoInput v%s !\n",VideoInput_Version());
     printf("This should compile ok provided that you link libVideoInput.a and pthreads\n");
     printf("For now the whole library is linux only , I have a windows version of the library\n");
@@ -46,6 +49,9 @@ int main()
     //feedsettings.PixelFormat=
 
     char SNAPSHOTS_ON=1;
+
+    struct timespec feed_start,feed_end;
+    clock_gettime(CLOCK_REALTIME,&feed_start);
     if ( InitVideoFeed(0,(char *) "/dev/video0",320,240,16,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
                                                                                             { printf(" .. failed \n"); return 0; }
 
@@ -60,8 +66,11 @@ int main()
         usleep(50);
       }
 
-    if (waittime>=MAX_waittime) {  printf(" failed! \n"); return 0;}
-    printf(" ok! \n");
+    if (waittime>=MAX_waittime) {  printf(" failed! \n"); return 0;} else
+                                {  printf(" ok! \n");}
+
+    clock_gettime(CLOCK_REALTIME,&feed_end);
+    printf("Bringing Video0 up took %u milliseconds ..!\n",(unsigned int) ((feed_end.tv_nsec-feed_start.tv_nsec)/1000000));
 
 
     printf("The Video feed is now beeing read from a secondary thread so each time we need a new snap we \"GetFrame\"\n");
@@ -151,5 +160,9 @@ int main()
     printf("All tests are complete , closing video inputs!\n");
     CloseVideoInputs();
     printf("Done..!\n");
+
+    clock_gettime(CLOCK_REALTIME,&prog_end);
+    printf("Tests took a total of %u milliseconds ..!\n",(unsigned int) ( (prog_end.tv_nsec-prog_start.tv_nsec) /(1000 * 1000) ) );
+
     return 0;
 }

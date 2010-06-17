@@ -108,7 +108,12 @@ char * VideoInput_Version();
 
 int InitVideoInputs(int numofinputs);
 int CloseVideoInputs();
+
 int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings);
+
+int ResetVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings);
+int ResetFeed(int feednum);
+
 int FeedReceiveLoopAlive(int feed_num);
 int PauseFeed(int feednum);
 int UnpauseFeed(int feednum);

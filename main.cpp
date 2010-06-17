@@ -39,7 +39,7 @@
 
 
 
-char * VIDEOINPT_VERSION=(char *) "0.230 RGB24 YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.235 RGB24/YUYV compatible";
 int increase_priority=0;
 
 struct Video
@@ -290,7 +290,18 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
   return 1;
 }
 
+int ResetVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings)
+{
+  fprintf(stderr,"ResetVideoFeed Not implemented, it should reset feed with new settings\n");
+  return 0;
+}
 
+
+int ResetFeed(int feednum)
+{
+  fprintf(stderr,"ResetFeed Not implemented , it should reset feed with the same settings as the original initialization\n");
+  return 0;
+}
 
 int PauseFeed(int feednum)
 {
@@ -342,6 +353,8 @@ unsigned char * ReturnDecodedLiveFrame(int webcam_id)
                                             return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
                                           } else
                                           {
+                                            /* The frame is ready so we mark it as decoded*/
+                                            camera_feeds[webcam_id].frame_decoded=1;
                                             return (unsigned char *) camera_feeds[webcam_id].frame;
                                           }
    return 0;

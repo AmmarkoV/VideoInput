@@ -33,6 +33,7 @@
 		</Compiler>
 		<Linker>
 			<Add option="-pthread" />
+			<Add option="-lrt" />
 			<Add library="../libVideoInput.a" />
 		</Linker>
 		<Unit filename="main.c">
