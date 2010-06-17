@@ -1,5 +1,8 @@
 #include "PrintV4L2.h"
 /*
+
+THIS FILE WILL BE DELETED
+
 void print(struct v4l2_capability cap)
 {
   fprintf(stderr,"driver: %s\n",cap.driver);

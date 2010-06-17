@@ -14,7 +14,7 @@ echo "Linking files.."
 ar  rcs libVideoInput.a main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o PixelFormatConversions.o 
 
 echo "Cleaning compiled object files.."
-rm main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o
+rm main.o image_storage.o V4L2.o PrintV4L2.o PixelFormats.o PixelFormatConversions.o 
 
 echo "Compiling Tester.."
 cd VideoInputTester

@@ -45,8 +45,8 @@ int main()
     //feedsettings.PixelFormat=
 
     char SNAPSHOTS_ON=1;
-    if ( InitVideoFeed(0,"/dev/video0",320,240,16,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
-                                                                                { printf(" .. failed \n"); return 0; }
+    if ( InitVideoFeed(0,(char *) "/dev/video0",320,240,16,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
+                                                                                            { printf(" .. failed \n"); return 0; }
 
     printf("Waiting for loop to begin receiving video ");
 

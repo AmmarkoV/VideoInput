@@ -358,7 +358,7 @@ unsigned char * GetFrame(int webcam_id)
      {
       handled=1;
       if (total_cameras>webcam_id) {
-                                    return ReturnDecodedLiveFrame(webcam_id);
+                                      return ReturnDecodedLiveFrame(webcam_id);
                                    }
                                      else
                                    { return 0; }
