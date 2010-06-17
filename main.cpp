@@ -39,7 +39,7 @@
 
 
 
-char * VIDEOINPT_VERSION=(char *) "0.269 RGB24 YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.230 RGB24 YUYV compatible";
 int increase_priority=0;
 
 struct Video

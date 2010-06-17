@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include "../VideoInput.h"
 
 int main()
@@ -69,12 +70,27 @@ int main()
 
 
 
-    printf("I Will now attempt to catch 10 frames \n");
-    int i , ilim= 10;
+    int i , ilim=160;
+    printf("I Will now attempt to catch %u frames \n",ilim);
+    struct timespec start,end;
+    clock_gettime(CLOCK_REALTIME,&start);
     for ( i=0; i<ilim; i++)
      {
        pixels = (unsigned char *) GetFrame(0);
      }
+    clock_gettime(CLOCK_REALTIME,&end);
+    unsigned int achieved_nsecs = end.tv_nsec-start.tv_nsec;
+    unsigned int achieved_fps = (unsigned int) ( ( ilim * 1000 * 1000 ) / achieved_nsecs ) * 1000;
+
+    if ( achieved_nsecs == 0 ) {} else
+    printf(" %u frames took %u nanoseconds , achieved %u fps \n",ilim,achieved_nsecs,achieved_fps);
+ /*   160   achieved_nsecs / 1000 * 1000 * 1000
+      x     1 */
+
+    printf("The numbers above are not actual frames grabbed but how many times we were able to grab a frame from the stream.");
+    printf(" Most cameras operate at 25-30 fps we could by average access the frame %u times for each frame actually taken from the device\n\n\n",achieved_fps/30);
+
+
 
     if (pixels == 0 ) { printf("Something was not right and we got back a zero frame , test failed\n");
                         CloseVideoInputs();
