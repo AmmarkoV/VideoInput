@@ -39,7 +39,7 @@
 
 
 
-char * VIDEOINPT_VERSION=(char *) "0.235 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.237 RGB24/YUYV compatible";
 int increase_priority=0;
 
 struct Video
@@ -235,6 +235,12 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
       PrintOutFieldType(camera_feeds[inpt].fmt.fmt.pix.field);
 
        camera_feeds[inpt].decoded_pixels=0;
+
+       if (VideoFormatImplemented(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
+       {
+        fprintf(stderr,(char *)"Video format not implemented!!! :S \n");
+       }
+
        if (VideoFormatNeedsDecoding(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
        {
           /*NEEDS TO DECODE TO RGB 24 , allocate memory*/
@@ -272,6 +278,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 
 
     /* STARTING VIDEO RECEIVE THREAD!*/
+    camera_feeds[inpt].thread_alive_flag=0; /* <- This will be set to 1 when child process will start :)*/
     camera_feeds[inpt].stop_snap_loop=0;
     camera_feeds[inpt].loop_thread=0;
 
@@ -282,9 +289,11 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
     int timeneeded=0;
     while (camera_feeds[inpt].thread_alive_flag==0) { usleep(20); ++timeneeded; printf("."); }
 
-    printf("Giving some time for the receive threads to wake up!\n");
-    sleep(1);
-    printf("InitVideoFeed %u is ok!\n",inpt);
+    printf("Giving some time for the receive threads to wake up!");
+    unsigned int waittime=0;
+    while ( ( waittime<50 ) && (camera_feeds[inpt].thread_alive_flag==0) ) { printf("."); usleep(100); ++waittime; }
+
+    printf("\nInitVideoFeed %u is ok!\n",inpt);
 
 
   return 1;
@@ -479,6 +488,9 @@ void * SnapLoop( void * ptr)
 
     }
 
+
+   printf("Try to snap #%d for the first time \n",feed_num);
+   camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
    printf("Video capture thread #%d is alive \n",feed_num);
    camera_feeds[feed_num].thread_alive_flag=1;
 

@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <time.h>
 #include "../VideoInput.h"
+#include <linux/videodev2.h>
 
 int main()
 {

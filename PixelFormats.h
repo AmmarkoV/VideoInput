@@ -7,6 +7,7 @@
 
 
 int VideoFormatNeedsDecoding(int videoformat,int bitdepth);
+int VideoFormatImplemented(int videoformat,int bitdepth);
 
 void PrintOutPixelFormat(int pix_format);
 void PrintOutCaptureMode(int cap_mode);

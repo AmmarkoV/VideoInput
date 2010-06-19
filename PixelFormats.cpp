@@ -21,6 +21,26 @@ int VideoFormatNeedsDecoding(int videoformat,int bitdepth)
   return 0;
 }
 
+int VideoFormatImplemented(int videoformat,int bitdepth)
+{
+   switch (videoformat)
+   {
+      case V4L2_PIX_FMT_YUYV:
+       return 1;
+      break;
+      case V4L2_PIX_FMT_RGB24:
+       /* INPUT IS ALREADY RGB24 */
+       return 1;
+      break;
+      default :
+       printf(" Need to add handler for format , will propably output garbage on screen :S \n");
+       return 0;
+      break;
+   };
+  return 0;
+}
+
+
 
 void DebugSay(char * what)
 {
