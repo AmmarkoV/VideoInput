@@ -286,12 +286,13 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
     param.feednum=inpt;
     pthread_create( &camera_feeds[inpt].loop_thread, NULL,  SnapLoop ,(void*) &param);
 
-    int timeneeded=0;
-    while (camera_feeds[inpt].thread_alive_flag==0) { usleep(20); ++timeneeded; printf("."); }
-
-    printf("Giving some time for the receive threads to wake up!");
-    unsigned int waittime=0;
-    while ( ( waittime<50 ) && (camera_feeds[inpt].thread_alive_flag==0) ) { printf("."); usleep(100); ++waittime; }
+    unsigned int waittime=0,MAX_WAIT=100,SLEEP_PER_LOOP_MILLI=50*/*Milliseconds*/1000;
+    printf("Giving some time ( max =  %u ms ) for the receive threads to wake up ",MAX_WAIT*SLEEP_PER_LOOP_MILLI);
+    while ( ( waittime<MAX_WAIT ) && (camera_feeds[inpt].thread_alive_flag==0) ) {
+                                                                                   if (waittime%10==0) printf(".");
+                                                                                   usleep(SLEEP_PER_LOOP_MILLI);
+                                                                                   ++waittime;
+                                                                                 }
 
     printf("\nInitVideoFeed %u is ok!\n",inpt);
 
