@@ -39,7 +39,7 @@
 
 
 
-char * VIDEOINPT_VERSION=(char *) "0.237 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.238 RGB24/YUYV compatible";
 int increase_priority=0;
 
 struct Video
@@ -236,9 +236,9 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 
        camera_feeds[inpt].decoded_pixels=0;
 
-       if (VideoFormatImplemented(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
+       if (!VideoFormatImplemented(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
        {
-        fprintf(stderr,(char *)"Video format not implemented!!! :S \n");
+          fprintf(stderr,(char *)"Video format not implemented!!! :S \n");
        }
 
        if (VideoFormatNeedsDecoding(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))

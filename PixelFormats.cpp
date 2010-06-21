@@ -14,7 +14,7 @@ int VideoFormatNeedsDecoding(int videoformat,int bitdepth)
        return 0;
       break;
       default :
-       printf(" Need to add handler for format , will propably output garbage on screen :S \n");
+       printf("Video Format Needs Decoding but no handler implemnted, will propably output garbage on screen :S \n");
        return 0;
       break;
    };
@@ -33,7 +33,7 @@ int VideoFormatImplemented(int videoformat,int bitdepth)
        return 1;
       break;
       default :
-       printf(" Need to add handler for format , will propably output garbage on screen :S \n");
+       printf("Video Conversion Not Implemented, need to add handler for format , will propably output garbage on screen :S \n");
        return 0;
       break;
    };
