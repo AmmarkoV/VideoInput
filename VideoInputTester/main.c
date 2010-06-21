@@ -47,13 +47,18 @@ int main()
 
     printf("Creating setting structure \n");
     struct VideoFeedSettings feedsettings={0};
-    //feedsettings.PixelFormat=
+
+    char BITRATE=32;
+
+    feedsettings.PixelFormat=V4L2_PIX_FMT_YUYV; BITRATE=16;// <- Common setting for UVC webcams
+    //feedsettings.PixelFormat=V4L2_PIX_FMT_RGB24; BITRATE=24;//<- NO COMPRESION Common setting for V4L devices
+
 
     char SNAPSHOTS_ON=1;
 
     struct timespec feed_start,feed_end;
     clock_gettime(CLOCK_REALTIME,&feed_start);
-    if ( InitVideoFeed(0,(char *) "/dev/video0",320,240,16,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
+    if ( InitVideoFeed(0,(char *) "/dev/video0",320,240,BITRATE,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
                                                                                             { printf(" .. failed \n"); return 0; }
 
     printf("Waiting for loop to begin receiving video ");
