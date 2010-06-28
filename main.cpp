@@ -39,7 +39,7 @@
 
 
 
-char * VIDEOINPT_VERSION=(char *) "0.238 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.242 RGB24/YUYV compatible";
 int increase_priority=0;
 
 struct Video
@@ -48,6 +48,7 @@ struct Video
   char * videoinp;
   unsigned int height;
   unsigned int width;
+  unsigned int frame_already_passed;
 
   /* VIDEO 4 LINUX DATA */
   struct v4l2_format fmt;
@@ -244,7 +245,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
        if (VideoFormatNeedsDecoding(camera_feeds[inpt].input_pixel_format,camera_feeds[inpt].input_pixel_format_bitdepth))
        {
           /*NEEDS TO DECODE TO RGB 24 , allocate memory*/
-          camera_feeds[inpt].decoded_pixels = (char * ) malloc( width*height*3 + 1);
+          camera_feeds[inpt].decoded_pixels = (char * ) malloc( (width*height*3) + 1);
           memset(camera_feeds[inpt].decoded_pixels, '\0',width*height*3);
        }
 
@@ -420,6 +421,7 @@ unsigned char * GetFrame(int webcam_id)
      }
     break;
 
+
      default :
      {
       /* THE FRAME MODE IS SET ON AN UNKNOWN MODE*/
@@ -429,6 +431,21 @@ unsigned char * GetFrame(int webcam_id)
   return 0;
 }
 
+unsigned int NewFrameAvailiable(int webcam_id)
+{
+
+    /* return 1;
+       ALWAYS NEW FRAME AVAILIABLE :P*/
+
+    if ( camera_feeds[webcam_id].frame_already_passed==1) return 0;
+    return 1;
+}
+
+void SignalFrameProcessed(int webcam_id)
+{
+    camera_feeds[webcam_id].frame_already_passed=1;
+    return;
+}
 
 
 void RecordInLoop(int feed_num)
@@ -445,11 +462,13 @@ void RecordInLoop(int feed_num)
 
 
     char store_path[256]={0};
-    char last_part[6]="0.ppm";
+    char last_part[7]="0.ppm";
     last_part[0]='0'+feed_num;
 
     strcpy(store_path,video_simulation_path);
     strcat(store_path,last_part);
+
+
     WritePPM(store_path,&camera_feeds[feed_num].rec_video);
     if ( mode_started == RECORDING_ONE_ON) { camera_feeds[feed_num].video_simulation = LIVE_ON; }
 
@@ -497,7 +516,7 @@ void * SnapLoop( void * ptr)
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
-       usleep(15); /* 20ms sleep time per sample , its a good value for 2 cameras*/
+       usleep(15000); /* 15000ns sleep time per sample , its a good value for 2 cameras*/
 
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { /* WE DONT NEED THE SNAPSHOT TO BE LOCKED!*/
@@ -505,6 +524,7 @@ void * SnapLoop( void * ptr)
            { camera_feeds[feed_num].v4l2_intf->getFrame(); /*Get frame only to keep V4L2 running ? */ } else
            { camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame(); }
 
+          camera_feeds[feed_num].frame_already_passed=0; /* <- This signals to a program linked to VideoInput that there is a new frame just snapped*/
           camera_feeds[feed_num].frame_decoded=0; //<- This signals that we have a new frame that MAY need to be decoded to RGB24
        } else
        {
@@ -555,7 +575,12 @@ void Record(char * filename)
     if ( strlen( filename ) > 250 ) return;
 
     int i=0;
-    for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = RECORDING_ON;
+    for (i=0; i<total_cameras; i++)
+     {
+         PauseFeed(i);
+           camera_feeds[i].video_simulation = RECORDING_ON;
+         UnpauseFeed(i);
+     }
 
     strcpy(video_simulation_path,filename);
 }
@@ -567,8 +592,12 @@ void RecordOne(char * filename)
     if ( strlen( filename ) > 250 ) return;
 
     int i=0;
-    for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = RECORDING_ONE_ON;
-
+    for (i=0; i<total_cameras; i++)
+      {
+        PauseFeed(i);
+          camera_feeds[i].video_simulation = RECORDING_ONE_ON;
+        UnpauseFeed(i);
+      }
     strcpy(video_simulation_path,filename);
 }
 

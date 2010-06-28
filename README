@@ -1,4 +1,7 @@
-This is a V4L2 C/C++ library!
+
+http://github.com/AmmarkoV/VideoInput/
+
+This is a V4L2 C/C++ library! 
 It also has a Tester app in the VideoInputTester dir
 You can easily compile the project using Code::Blocks and openning the .cbp 
 

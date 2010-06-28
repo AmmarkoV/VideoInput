@@ -78,19 +78,25 @@ int ReadPPM(char * filename,struct Image * pic)
 
 int WritePPM(char * filename,struct Image * pic)
 {
+
     FILE *fd=0;
     fd = fopen(filename,"wb");
 
     if (fd!=0)
 	{
-     unsigned int n;
+     unsigned int n=0;
+
      fprintf(fd, "P6\n%d %d\n255\n", pic->size_x, pic->size_y);
-     n = pic->size_x * pic->size_y;
+     n = (unsigned int ) ( pic->size_x * pic->size_y ) ;
+
      fwrite(pic->pixels, 3, n, fd);
+
      fflush(fd);
      fclose(fd);
      return 1;
 	}
+
+
   return 0;
 }
 
