@@ -124,9 +124,10 @@ unsigned int NewFrameAvailiable(int webcam_id);
 void SignalFrameProcessed(int webcam_id);
 
 // Playback / Recording
+void CompressRecordWithImageMagick(int state);
 void Play(char * filename);
-void Record(char * filename);
-void RecordOne(char * filename);
+void Record(char * filename,int timestamp_filename);
+void RecordOne(char * filename,int timestamp_filename);
 void Stop();
 unsigned int VideoSimulationState();
 #ifdef __cplusplus
