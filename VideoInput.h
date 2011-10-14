@@ -109,16 +109,22 @@ char * VideoInput_Version();
 int InitVideoInputs(int numofinputs);
 int CloseVideoInputs();
 
+int CloseVideoFeed( int inpt );
 int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings);
+
 
 int ResetVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings);
 int ResetFeed(int feednum);
+
+void SetCameraParameter(int webcam_id,int param_id,double * param);
+double GetCameraParameter(int webcam_id,int param_id);
+
 
 int FeedReceiveLoopAlive(int feed_num);
 int PauseFeed(int feednum);
 int UnpauseFeed(int feednum);
 
-
+unsigned char * GetEmptyFrame();
 unsigned char * GetFrame(int webcam_id);
 unsigned int NewFrameAvailiable(int webcam_id);
 void SignalFrameProcessed(int webcam_id);

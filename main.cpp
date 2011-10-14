@@ -37,10 +37,11 @@
 #define WORKING 5
 #define NO_VIDEO_AVAILIABLE 6
 
-#define THREAD_SLEEP_TIME_NANOSECONDS 15000
 
-char * VIDEOINPT_VERSION=(char *) "0.243 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.247 RGB24/YUYV compatible";
+int do_not_return_zero_pointers=1;
 int increase_priority=0;
+
 
 struct Video
 {
@@ -48,6 +49,8 @@ struct Video
   char * videoinp;
   unsigned int height;
   unsigned int width;
+  unsigned int frame_rate;
+  unsigned int sleep_time_per_frame_microseconds;
   unsigned int frame_already_passed;
 
   /* VIDEO 4 LINUX DATA */
@@ -55,6 +58,10 @@ struct Video
   void *frame;
   unsigned int size_of_frame;
   V4L2 *v4l2_intf;
+
+  /* CAMERA INTRINSIC PARAMETERS */
+  double fx,fy,cx,cy;
+  double k1,k2,p1,p2,k3;
 
   /* DATA NEEDED FOR DECODERS TO WORK */
   unsigned int input_pixel_format;
@@ -81,13 +88,51 @@ struct ThreadPassParam
 };
 
 int total_cameras=0;
+unsigned char * empty_frame=0;
+unsigned int largest_feed_x=320;
+unsigned int largest_feed_y=240;
+
 struct Video * camera_feeds=0;
 char video_simulation_path[256]={0};
 io_method io=IO_METHOD_MMAP; /*IO_METHOD_MMAP;  IO_METHOD_READ; IO_METHOD_USERPTR;*/
 
 void * SnapLoop(void *ptr );
 
+int ReallocEmptyFrame(unsigned int new_size_x,unsigned int new_size_y)
 
+/*This function reallocates empty_frame in order to make it point to a usable black screen buffer
+  this will help applications that wait for video always get a video frame instead of a zero pointer
+  that needs to be managed carefully..!
+ */
+{
+    if ( !do_not_return_zero_pointers )
+      {
+          return 0;
+      }
+
+    int change_made = 0;
+    if ( largest_feed_x < new_size_x ) { change_made = 1; largest_feed_x = new_size_x; }
+    if ( largest_feed_y < new_size_y ) { change_made = 1; largest_feed_y = new_size_y; }
+
+
+    if (  (change_made) || (empty_frame == 0) )
+      {
+          if ( empty_frame != 0 ) { free(empty_frame); }
+          empty_frame=(unsigned char * ) malloc(largest_feed_x * largest_feed_y * 3 * sizeof ( unsigned char) );
+          if (empty_frame==0) { fprintf(stderr,"Error allocating memory for empty_frame structure"); return 0; }
+
+          unsigned int i=0;
+          for (i=0; i<largest_feed_x * largest_feed_y * 3; i++) { empty_frame[i]=0;}
+
+          DrawLine_inFrame(0,0,largest_feed_x-1,largest_feed_y-1,255,0,0,empty_frame,3,largest_feed_x,largest_feed_y);
+          DrawLine_inFrame(0,largest_feed_y-1,largest_feed_x-1,0,255,0,0,empty_frame,3,largest_feed_x,largest_feed_y);
+
+
+          fprintf(stderr,"Reallocating new `empty` frame with size %ux%u \n",largest_feed_x,largest_feed_y);
+      }
+
+    return 1;
+}
 
 char * VideoInput_Version()
 {
@@ -120,6 +165,9 @@ int InitVideoInputs(int numofinputs)
 {
     if (total_cameras>0) { fprintf(stderr,"Error , Video Inputs already active ?\n total_cameras=%u\n",total_cameras); return 0;}
 
+    ReallocEmptyFrame(320,240);
+
+
     /*First allocate memory for V4L2 Structures  , etc*/
     camera_feeds = (struct Video * ) malloc ( sizeof( struct Video ) * (numofinputs+1) );
     if (camera_feeds==0) { fprintf(stderr,"Error , cannot allocate memory for %u video inputs \n",total_cameras); return 0;}
@@ -127,15 +175,29 @@ int InitVideoInputs(int numofinputs)
     int i;
     for ( i=0; i<total_cameras; i++ )
       {  /*We mark each camera as dead , to preserve a clean state*/
+          camera_feeds[i].loop_thread = 0;
+
           camera_feeds[i].thread_alive_flag=0;
           camera_feeds[i].rec_video.pixels=0;
           camera_feeds[i].frame=0;
           camera_feeds[i].v4l2_intf=0;
+          camera_feeds[i].fx=0,camera_feeds[i].fy=0,camera_feeds[i].cx=0,camera_feeds[i].cy=0;
+          camera_feeds[i].k1=0,camera_feeds[i].k2=0,camera_feeds[i].p1=0,camera_feeds[i].p2=0,camera_feeds[i].k3=0;
+
+          //memset ((void*) camera_feeds[i],0,sizeof(struct Video));
       }
 
     /*Lets Refresh USB devices list :)*/
     int ret=system((const char * ) "lsusb");
     if ( ret == 0 ) { printf("Syscall USB list success\n"); }
+
+    ret=system((const char * ) "ls /dev/video*");
+    if ( ret == 0 ) { printf("These are the possible video devices .. \n"); }
+
+    ret=system((const char * ) "ls /dev/video* | wc -l");
+    if ( ret == 0 ) { printf("total video devices .. \n"); }
+
+
 
     printf("\nAvailiable Video Devices : \n");
     ret=system((const char * ) "ls /dev | grep video");
@@ -158,6 +220,8 @@ int CloseVideoInputs()
     if (total_cameras==0) { fprintf(stderr,"Error , Video Inputs already deactivated ?\n"); return 0;}
     if (camera_feeds==0) { fprintf(stderr,"Error , Video Inputs already deactivated ?\n"); return 0;}
 
+    if ( empty_frame != 0 ) { free(empty_frame); empty_frame=0; }
+
     int i=0;
     for ( i=0; i<total_cameras; i++ )
      {
@@ -165,7 +229,12 @@ int CloseVideoInputs()
        {
         fprintf(stderr,"Video %u Stopping\n",i);
         camera_feeds[i].stop_snap_loop=1;
-        pthread_join( camera_feeds[i].loop_thread, NULL);
+
+        if ( pthread_join( camera_feeds[i].loop_thread, NULL) != 0 )
+          {
+              fprintf(stderr,"Error rejoining VideoInput thread \n");
+          }
+
         usleep(30);
         camera_feeds[i].v4l2_intf->stopCapture();
         usleep(30);
@@ -190,23 +259,44 @@ int CloseVideoInputs()
 
     free(camera_feeds);
 
+
     fprintf(stderr,"Video Input successfully deallocated\n");
 
     return 1 ;
 }
 
+int ChooseDifferentSoftFramerate(int inpt,unsigned int new_framerate_per_second)
+{
+    if ( new_framerate_per_second == 0 ) { return 0; }
+    camera_feeds[inpt].frame_rate=new_framerate_per_second;
+    camera_feeds[inpt].sleep_time_per_frame_microseconds = (unsigned int ) 10000 / new_framerate_per_second;
+    camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds * 100;
+    return 1;
+}
+
+
+int CloseVideoFeed( int inpt )
+{
+    fprintf(stderr,"CloseVideoFeed Not implemented, it should close the feed thread with number %u , and completely free memory \n",inpt);
+    return 0;
+}
+
 
 int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings)
 {
+   camera_feeds[inpt].video_simulation=NO_VIDEO_AVAILIABLE;
    printf("Initializing Video Feed %u ( %s ) @ %u/%u \n",inpt,viddev,width,height);
+   ReallocEmptyFrame(width,height);
+
    if (!VideoInputsOk()) return 0;
-   if ( (!FileExists(viddev)) ) { fprintf(stderr,"Super Quick linux check for the webcam (%s) returned false.. please connect V4L2 compatible camera!\n",viddev); return 0; }
+   if ( (!FileExists(viddev)) ) { fprintf(stderr,"\n\n\nLinux Check for the webcam (%s) returned false..\n PLEASE CONNECT V4L2 COMPATIBLE CAMERA!!!!!\n\n\n",viddev); return 0; }
+
 
    camera_feeds[inpt].videoinp = viddev; /*i.e. (char *) "/dev/video0";*/
    camera_feeds[inpt].width = width;
    camera_feeds[inpt].height = height;
    camera_feeds[inpt].size_of_frame=width*height*(bitdepth/8);
-   camera_feeds[inpt].video_simulation=LIVE_ON;
+   //We will set this at the end..! camera_feeds[inpt].video_simulation=LIVE_ON;
    camera_feeds[inpt].thread_alive_flag=0;
    camera_feeds[inpt].snap_paused=0;
    camera_feeds[inpt].snap_lock=0;
@@ -247,6 +337,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
        {
           /*NEEDS TO DECODE TO RGB 24 , allocate memory*/
           camera_feeds[inpt].decoded_pixels = (char * ) malloc( (width*height*3) + 1);
+          if (camera_feeds[inpt].decoded_pixels ==0) { fprintf(stderr,"Error allocating memory for DECODER TO RGB 24 structure"); return 0; }
           memset(camera_feeds[inpt].decoded_pixels, '\0',width*height*3);
        }
 
@@ -263,7 +354,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
            camera_feeds[inpt].v4l2_intf->initBuffers();
            camera_feeds[inpt].v4l2_intf->startCapture();
 
-           camera_feeds[inpt].frame = 0;
+           camera_feeds[inpt].frame = empty_frame;
        }
 
    printf("Enabling Snapshots!\n");
@@ -275,6 +366,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
    if ( snapshots_on == 1 )
     {
         camera_feeds[inpt].rec_video.pixels = (char * ) malloc(camera_feeds[inpt].rec_video.image_size + 1);
+        if (camera_feeds[inpt].rec_video.pixels == 0) { fprintf(stderr,"Error allocating memory for snapshot frame"); return 0; }
     }
     /* INIT MEMORY FOR SNAPSHOTS !*/
 
@@ -284,11 +376,19 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
     camera_feeds[inpt].stop_snap_loop=0;
     camera_feeds[inpt].loop_thread=0;
 
+    ChooseDifferentSoftFramerate(inpt,25); // Go for a good old solid PAL 25 fps , ( the PS3 cameras may be snapping at 120fps , but VisualCortex without
+                                           // hardware acceleration can`t go more than 6-8 fps )
+
     struct ThreadPassParam param={0};
     param.feednum=inpt;
-    pthread_create( &camera_feeds[inpt].loop_thread, NULL,  SnapLoop ,(void*) &param);
+    if ( pthread_create( &camera_feeds[inpt].loop_thread, NULL,  SnapLoop ,(void*) &param) != 0 )
+         {
+             fprintf(stderr,"Could not create the camera receiving thread.. \n");
+             CloseVideoFeed(inpt);
+             return 0;
+         }
 
-    unsigned int waittime=0,MAX_WAIT=100,SLEEP_PER_LOOP_MILLI=50*/*Milliseconds*/1000;
+    unsigned int waittime=0,MAX_WAIT=100  , SLEEP_PER_LOOP_MILLI = 50 * /*Milliseconds*/ 1000;
     printf("Giving some time ( max =  %u ms ) for the receive threads to wake up ",MAX_WAIT*SLEEP_PER_LOOP_MILLI);
     while ( ( waittime<MAX_WAIT ) && (camera_feeds[inpt].thread_alive_flag==0) ) {
                                                                                    if (waittime%10==0) printf(".");
@@ -298,6 +398,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
 
     printf("\nInitVideoFeed %u is ok!\n",inpt);
 
+    camera_feeds[inpt].video_simulation=LIVE_ON;
 
   return 1;
 }
@@ -361,20 +462,68 @@ unsigned char * ReturnDecodedLiveFrame(int webcam_id)
    if (VideoFormatNeedsDecoding(camera_feeds[webcam_id].input_pixel_format,camera_feeds[webcam_id].input_pixel_format_bitdepth)==1)
                                           {
                                             /*VIDEO COMES IN A FORMAT THAT NEEDS DECODING TO RGB 24*/
-                                            if ( DecodePixels(webcam_id)==0 ) return 0;
+                                            if ( DecodePixels(webcam_id)==0 ) return empty_frame;
+
                                             return (unsigned char *) camera_feeds[webcam_id].decoded_pixels;
                                           } else
                                           {
                                             /* The frame is ready so we mark it as decoded*/
                                             camera_feeds[webcam_id].frame_decoded=1;
+
+                                            if ( camera_feeds[webcam_id].frame == 0 )
+                                               {
+                                                   /*Handler for when the frame does not exist */
+                                                   return empty_frame;
+                                               }
                                             return (unsigned char *) camera_feeds[webcam_id].frame;
                                           }
-   return 0;
+   return empty_frame;
 }
+
+unsigned char * GetEmptyFrame()
+{
+    return empty_frame;
+}
+
+
+void SetCameraParameter(int webcam_id,int param_id,double * param)
+{
+    switch (param_id)
+    {
+      case  2 : camera_feeds[webcam_id].fx=*param; break;
+      case  3 : camera_feeds[webcam_id].fy=*param; break;
+      case  4 : camera_feeds[webcam_id].cx=*param; break;
+      case  5 : camera_feeds[webcam_id].cy=*param; break;
+      case  6 : camera_feeds[webcam_id].k1=*param; break;
+      case  7 : camera_feeds[webcam_id].k2=*param; break;
+      case  8 : camera_feeds[webcam_id].k3=*param; break;
+      case  9 : camera_feeds[webcam_id].p1=*param; break;
+      case 10 : camera_feeds[webcam_id].p2=*param; break;
+    };
+}
+
+double GetCameraParameter(int webcam_id,int param_id)
+{
+    switch (param_id)
+    {
+      case  2 : return camera_feeds[webcam_id].fx; break;
+      case  3 : return camera_feeds[webcam_id].fy; break;
+      case  4 : return camera_feeds[webcam_id].cx; break;
+      case  5 : return camera_feeds[webcam_id].cy; break;
+      case  6 : return camera_feeds[webcam_id].k1; break;
+      case  7 : return camera_feeds[webcam_id].k2; break;
+      case  8 : return camera_feeds[webcam_id].k3; break;
+      case  9 : return camera_feeds[webcam_id].p1; break;
+      case 10 : return camera_feeds[webcam_id].p2; break;
+    };
+    return 0.0;
+}
+
+
 
 unsigned char * GetFrame(int webcam_id)
 {
-  if (!VideoInputsOk()) return 0;
+  if (!VideoInputsOk()) return empty_frame;
   int handled=0;
 
   switch(camera_feeds[webcam_id].video_simulation)
@@ -386,7 +535,7 @@ unsigned char * GetFrame(int webcam_id)
                                       return ReturnDecodedLiveFrame(webcam_id);
                                    }
                                      else
-                                   { return 0; }
+                                   {   return empty_frame; }
      }
     break;
 
@@ -394,7 +543,7 @@ unsigned char * GetFrame(int webcam_id)
      {
       handled=1;
       if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels; } else
-                                   { return 0; }
+                                   {  return empty_frame; }
      }
     break;
 
@@ -411,6 +560,8 @@ unsigned char * GetFrame(int webcam_id)
       ReadPPM(store_path,&camera_feeds[webcam_id].rec_video);
       camera_feeds[webcam_id].video_simulation = PLAYBACK_ON_LOADED;
       fprintf(stderr,"Reading Snapshot ( %s ) \n",store_path);
+      if ( camera_feeds[webcam_id].rec_video.pixels == 0 )
+                      {  return empty_frame; }
       return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels;
      }
     break;
@@ -429,7 +580,7 @@ unsigned char * GetFrame(int webcam_id)
       handled=0;
      }
   }
-  return 0;
+  return empty_frame;
 }
 
 unsigned int NewFrameAvailiable(int webcam_id)
@@ -530,7 +681,7 @@ void * SnapLoop( void * ptr)
 
    while ( camera_feeds[feed_num].stop_snap_loop == 0 )
     {
-       usleep(THREAD_SLEEP_TIME_NANOSECONDS); /* sleep ( wait ) time per sample , defined in this file*/
+       usleep(camera_feeds[feed_num].sleep_time_per_frame_microseconds); /* sleep ( wait ) time per sample , defined in this file*/
 
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { /* WE DONT NEED THE SNAPSHOT TO BE LOCKED!*/
