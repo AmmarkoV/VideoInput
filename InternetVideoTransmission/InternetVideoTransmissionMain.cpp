@@ -204,7 +204,8 @@ void InternetVideoTransmissionFrame::OnTimer1Trigger(wxTimerEvent& event)
 
 void InternetVideoTransmissionFrame::OnButtonConnectClick(wxCommandEvent& event)
 {
- char ip_cstr[200];
+ char ip_cstr[200]={0};
  strcpy( ip_cstr, (const char*)PeerIP->GetValue().mb_str(wxConvUTF8) );
  StartupNetworkClient(ip_cstr,1234);
+ ButtonConnect->Disable();
 }

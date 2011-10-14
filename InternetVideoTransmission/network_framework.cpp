@@ -26,6 +26,8 @@ int network_transmit_stop=0;
 pthread_t network_transmit_loop_id=0;
 void * NetworkTransmitLoop(void *ptr );
 
+char peer_ip[200]={0};
+
 
 struct TransmitThreadPassParam
 {
@@ -105,14 +107,14 @@ void * NetworkTransmitLoop(void *ptr )
     struct hostent *server;
 
 
-    portno = (int) param->port;
+    portno = 1234;// (int) param->port;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) { error("ERROR opening socket"); }
 
-    server = gethostbyname(param->ip);
+    server = gethostbyname(peer_ip);
     if (server == NULL) {
-                               fprintf(stderr,"ERROR, no such host (%s) \n",param->ip);
+                               fprintf(stderr,"ERROR, no such host (%s) \n",peer_ip);
                                exit(0);
                         }
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -120,10 +122,11 @@ void * NetworkTransmitLoop(void *ptr )
     bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) error("ERROR connecting");
-
-    TransmitMyImage (sockfd);
-
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+     { error("ERROR connecting"); } else
+     {
+        TransmitMyImage (sockfd);
+     }
 
     close(sockfd);
    return 0;
@@ -196,7 +199,10 @@ int StartupNetworkClient(char * ip,unsigned int port)
 
      struct TransmitThreadPassParam param={0};
      strcpy(param.ip,ip);
+     strcpy(peer_ip,ip);
      param.port = port;
+
+     fprintf(stderr,"Starting NetClient %s:%u\n",ip,port);
 
      if ( pthread_create( &network_transmit_loop_id , NULL,  NetworkTransmitLoop ,(void*) &param) != 0 )
      {
