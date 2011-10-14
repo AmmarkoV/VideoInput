@@ -94,11 +94,6 @@ void error(char * msg )
 
 
 
-
-
-
-
-
 void * NetworkTransmitLoop(void *ptr )
 {
     struct TransmitThreadPassParam *param;
@@ -109,7 +104,6 @@ void * NetworkTransmitLoop(void *ptr )
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
-    char buffer[256];
 
     portno = (int) param->port;
 
@@ -118,31 +112,18 @@ void * NetworkTransmitLoop(void *ptr )
 
     server = gethostbyname(param->ip);
     if (server == NULL) {
-                               fprintf(stderr,"ERROR, no such host\n");
+                               fprintf(stderr,"ERROR, no such host (%s) \n",param->ip);
                                exit(0);
                         }
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr,
-         (char *)&serv_addr.sin_addr.s_addr,
+    bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) error("ERROR connecting");
 
     TransmitMyImage (sockfd);
-/*
-    printf("Please enter the message: ");
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    n = write(sockfd,buffer,strlen(buffer));
-    if (n < 0)
-         error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s\n",buffer);
-    */
+
 
     close(sockfd);
    return 0;
@@ -162,23 +143,23 @@ void * NetworkReceiveLoop(void *ptr )
      portno = 1234;
 
      sockfd = socket(AF_INET, SOCK_STREAM, 0);
-     if (sockfd < 0) { return 0; /*error("ERROR opening socket");*/ }
+     if (sockfd < 0) { return 0; error("ERROR opening socket"); }
      bzero((char *) &serv_addr, sizeof(serv_addr));
 
 
      serv_addr.sin_family = AF_INET;
      serv_addr.sin_addr.s_addr = INADDR_ANY;
      serv_addr.sin_port = htons(portno);
-     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { return 0; /*error("ERROR on binding"); */ }
+     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { return 0; error("ERROR on binding");  }
      listen(sockfd,5);
      clilen = sizeof(cli_addr);
      while (1) {
          newsockfd = accept(sockfd,
                (struct sockaddr *) &cli_addr, &clilen);
-         if (newsockfd < 0) { return 0; /*error("ERROR on accept"); */ }
+         if (newsockfd < 0) { return 0; error("ERROR on accept");  }
 
          pid = fork();
-         if (pid < 0) { return 0; /*error("ERROR on fork");*/ }
+         if (pid < 0) { return 0; error("ERROR on fork"); }
 
 
          if (pid == 0)

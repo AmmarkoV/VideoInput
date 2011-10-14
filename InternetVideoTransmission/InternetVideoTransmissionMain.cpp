@@ -81,10 +81,10 @@ InternetVideoTransmissionFrame::InternetVideoTransmissionFrame(wxWindow* parent,
     wxMenu* Menu2;
 
     Create(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
-    SetClientSize(wxSize(801,516));
-    PeerIP = new wxTextCtrl(this, ID_TEXTCTRL1, _("127.0.0.1"), wxPoint(80,460), wxSize(200,27), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
-    StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Peer IP :"), wxPoint(16,464), wxDefaultSize, 0, _T("ID_STATICTEXT1"));
-    ButtonConnect = new wxButton(this, ID_BUTTON1, _("Connect"), wxPoint(288,458), wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
+    SetClientSize(wxSize(706,401));
+    PeerIP = new wxTextCtrl(this, ID_TEXTCTRL1, _("127.0.0.1"), wxPoint(104,312), wxSize(200,27), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
+    StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Peer IP :"), wxPoint(40,320), wxDefaultSize, 0, _T("ID_STATICTEXT1"));
+    ButtonConnect = new wxButton(this, ID_BUTTON1, _("Connect"), wxPoint(312,312), wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
     MenuBar1 = new wxMenuBar();
     Menu1 = new wxMenu();
     MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
@@ -187,11 +187,11 @@ void InternetVideoTransmissionFrame::OnPaint(wxPaintEvent& event)
 
   if ( camera_feed2 != 0 )
        {
-         dc.DrawBitmap(*camera_feed2,350,30,true);
+         dc.DrawBitmap(*camera_feed2,360,30,true);
        }
          else
        {
-        dc.DrawBitmap(*default_feed,350,30,true);
+        dc.DrawBitmap(*default_feed,360,30,true);
        }
 }
 
