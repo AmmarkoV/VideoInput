@@ -8,6 +8,7 @@
  **************************************************************/
 
 #include "InternetVideoTransmissionMain.h"
+#include "network_framework.h"
 #include <wx/msgdlg.h>
 #include <wx/dc.h>
 #include <wx/dcclient.h>
@@ -54,6 +55,9 @@ wxString wxbuildinfo(wxbuildinfoformat format)
 }
 
 //(*IdInit(InternetVideoTransmissionFrame)
+const long InternetVideoTransmissionFrame::ID_TEXTCTRL1 = wxNewId();
+const long InternetVideoTransmissionFrame::ID_STATICTEXT1 = wxNewId();
+const long InternetVideoTransmissionFrame::ID_BUTTON1 = wxNewId();
 const long InternetVideoTransmissionFrame::idMenuQuit = wxNewId();
 const long InternetVideoTransmissionFrame::idMenuAbout = wxNewId();
 const long InternetVideoTransmissionFrame::ID_STATUSBAR1 = wxNewId();
@@ -76,7 +80,10 @@ InternetVideoTransmissionFrame::InternetVideoTransmissionFrame(wxWindow* parent,
     wxMenu* Menu2;
 
     Create(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
-    SetClientSize(wxSize(620,451));
+    SetClientSize(wxSize(801,516));
+    TextCtrl1 = new wxTextCtrl(this, ID_TEXTCTRL1, _("127.0.0.1"), wxPoint(80,460), wxSize(200,27), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
+    StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Peer IP :"), wxPoint(16,464), wxDefaultSize, 0, _T("ID_STATICTEXT1"));
+    ButtonConnect = new wxButton(this, ID_BUTTON1, _("Connect"), wxPoint(288,458), wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
     MenuBar1 = new wxMenuBar();
     Menu1 = new wxMenu();
     MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
@@ -96,6 +103,7 @@ InternetVideoTransmissionFrame::InternetVideoTransmissionFrame(wxWindow* parent,
     Timer1.SetOwner(this, ID_TIMER1);
     Timer1.Start(25, false);
 
+    Connect(ID_BUTTON1,wxEVT_COMMAND_BUTTON_CLICKED,(wxObjectEventFunction)&InternetVideoTransmissionFrame::OnButtonConnectClick);
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&InternetVideoTransmissionFrame::OnQuit);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&InternetVideoTransmissionFrame::OnAbout);
     Connect(ID_TIMER1,wxEVT_TIMER,(wxObjectEventFunction)&InternetVideoTransmissionFrame::OnTimer1Trigger);
@@ -109,6 +117,8 @@ InternetVideoTransmissionFrame::InternetVideoTransmissionFrame(wxWindow* parent,
     videosettings.PixelFormat=V4L2_PIX_FMT_RGB24; BITRATE=24;   //   <- Common raw setting for UVC webcams ( Run Compat )
 
     InitVideoFeed(0,(char *) "/dev/video0",320,240,BITRATE,1,videosettings);
+
+    StartupNetworkServer();
 }
 
 InternetVideoTransmissionFrame::~InternetVideoTransmissionFrame()
@@ -171,4 +181,9 @@ void InternetVideoTransmissionFrame::OnPaint(wxPaintEvent& event)
 void InternetVideoTransmissionFrame::OnTimer1Trigger(wxTimerEvent& event)
 {
     Refresh();
+}
+
+void InternetVideoTransmissionFrame::OnButtonConnectClick(wxCommandEvent& event)
+{
+  StartupNetworkClient(,1234);
 }
