@@ -16,6 +16,8 @@
 #include "network_framework.h"
 #include "../VideoInput.h"
 
+char * peer_feed;
+
 int network_receive_stop=0;
 pthread_t network_receive_loop_id=0;
 void * NetworkReceiveLoop(void *ptr );
@@ -25,6 +27,11 @@ pthread_t network_transmit_loop_id=0;
 void * NetworkTransmitLoop(void *ptr );
 
 
+struct TransmitThreadPassParam
+{
+  char ip[123];
+  unsigned int port;
+};
 
 
 
@@ -59,7 +66,7 @@ void ReceivePeerImage (int sock)
 {
    while (!network_receive_stop)
     {
-      int n = read(sock,GetFrame(0),320*240*3);
+      int n = read(sock,peer_feed,320*240*3);
       sleep(100);
     }
 
@@ -78,6 +85,10 @@ void ReceivePeerImage (int sock)
 
 
 
+void error(char * msg )
+{
+  fprintf(stderr,"%s\n",msg);
+}
 
 
 
@@ -88,8 +99,54 @@ void ReceivePeerImage (int sock)
 
 
 
+void * NetworkTransmitLoop(void *ptr )
+{
+    struct TransmitThreadPassParam *param;
+    param = (struct TransmitThreadPassParam *) ptr;
 
 
+    int sockfd, portno, n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    char buffer[256];
+
+    portno = (int) param->port;
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) { error("ERROR opening socket"); }
+
+    server = gethostbyname(param->ip);
+    if (server == NULL) {
+                               fprintf(stderr,"ERROR, no such host\n");
+                               exit(0);
+                        }
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr,
+         (char *)&serv_addr.sin_addr.s_addr,
+         server->h_length);
+    serv_addr.sin_port = htons(portno);
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) error("ERROR connecting");
+
+    TransmitMyImage (sockfd);
+/*
+    printf("Please enter the message: ");
+    bzero(buffer,256);
+    fgets(buffer,255,stdin);
+    n = write(sockfd,buffer,strlen(buffer));
+    if (n < 0)
+         error("ERROR writing to socket");
+    bzero(buffer,256);
+    n = read(sockfd,buffer,255);
+    if (n < 0)
+         error("ERROR reading from socket");
+    printf("%s\n",buffer);
+    */
+
+    close(sockfd);
+   return 0;
+}
 
 
 
@@ -134,7 +191,7 @@ void * NetworkReceiveLoop(void *ptr )
      }
      close(sockfd);
 
-
+return 0;
 }
 
 
@@ -152,10 +209,15 @@ int StartupNetworkServer()
 
 
 
-int StartupNetworkClient()
+int StartupNetworkClient(char * ip,unsigned int port)
 {
      network_transmit_stop=0;
-     if ( pthread_create( &network_transmit_loop_id , NULL,  NetworkTransmitLoop ,0) != 0 )
+
+     struct TransmitThreadPassParam param={0};
+     strcpy(param.ip,ip);
+     param.port = port;
+
+     if ( pthread_create( &network_transmit_loop_id , NULL,  NetworkTransmitLoop ,(void*) &param) != 0 )
      {
          fprintf(stderr,"Error creating network transmit loop \n");
          return 0;

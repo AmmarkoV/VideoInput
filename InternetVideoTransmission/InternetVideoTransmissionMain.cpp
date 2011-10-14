@@ -25,8 +25,9 @@
 
 struct VideoFeedSettings videosettings;
 wxBitmap *default_feed=0;
-wxBitmap *camera_feed=0;
-wxImage  img;
+wxBitmap *camera_feed=0,*camera_feed2=0;
+wxImage  img,img2;
+
 
 //helper functions
 enum wxbuildinfoformat {
@@ -81,7 +82,7 @@ InternetVideoTransmissionFrame::InternetVideoTransmissionFrame(wxWindow* parent,
 
     Create(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
     SetClientSize(wxSize(801,516));
-    TextCtrl1 = new wxTextCtrl(this, ID_TEXTCTRL1, _("127.0.0.1"), wxPoint(80,460), wxSize(200,27), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
+    PeerIP = new wxTextCtrl(this, ID_TEXTCTRL1, _("127.0.0.1"), wxPoint(80,460), wxSize(200,27), 0, wxDefaultValidator, _T("ID_TEXTCTRL1"));
     StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Peer IP :"), wxPoint(16,464), wxDefaultSize, 0, _T("ID_STATICTEXT1"));
     ButtonConnect = new wxButton(this, ID_BUTTON1, _("Connect"), wxPoint(288,458), wxDefaultSize, 0, wxDefaultValidator, _T("ID_BUTTON1"));
     MenuBar1 = new wxMenuBar();
@@ -110,13 +111,15 @@ InternetVideoTransmissionFrame::InternetVideoTransmissionFrame(wxWindow* parent,
     //*)
 
     default_feed=new wxBitmap(wxT("empty.bmp"),wxBITMAP_TYPE_BMP);
-    InitVideoInputs(2);
+    InitVideoInputs(1);
 
     unsigned int BITRATE = 0;
     //videosettings.PixelFormat=V4L2_PIX_FMT_YUYV; BITRATE=16; // <- Common compressed setting for UVC webcams
     videosettings.PixelFormat=V4L2_PIX_FMT_RGB24; BITRATE=24;   //   <- Common raw setting for UVC webcams ( Run Compat )
 
     InitVideoFeed(0,(char *) "/dev/video0",320,240,BITRATE,1,videosettings);
+    peer_feed = ( char * ) malloc(320*240*3*sizeof(char));
+
 
     StartupNetworkServer();
 }
@@ -148,7 +151,8 @@ void UpdateImageOfCamera()
 {
   if (NewFrameAvailiable(0))
    {
-     if ( camera_feed != 0 ) { delete camera_feed; camera_feed=0; }
+     if ( camera_feed != 0 )  { delete camera_feed; camera_feed=0; }
+     if ( camera_feed2 != 0 ) { delete camera_feed2; camera_feed2=0; }
 
      void *frame=GetFrame(0);
        if ( frame != 0)
@@ -156,6 +160,14 @@ void UpdateImageOfCamera()
             img.SetData((unsigned char *)frame,320,240,true);
             camera_feed = new wxBitmap(img);
         }
+
+     void *frame2=peer_feed;
+       if ( frame != 0)
+        {
+            img2.SetData((unsigned char *)frame2,320,240,true);
+            camera_feed2 = new wxBitmap(img2);
+        }
+
    }
   }
 
@@ -166,14 +178,21 @@ void InternetVideoTransmissionFrame::OnPaint(wxPaintEvent& event)
   UpdateImageOfCamera();
   if ( camera_feed != 0 )
        {
-         dc.DrawBitmap(*camera_feed,43,44,true);
+         dc.DrawBitmap(*camera_feed,30,30,true);
        }
          else
        {
-        dc.DrawBitmap(*default_feed,43,44,true);
+        dc.DrawBitmap(*default_feed,30,30,true);
        }
 
-
+  if ( camera_feed2 != 0 )
+       {
+         dc.DrawBitmap(*camera_feed2,350,30,true);
+       }
+         else
+       {
+        dc.DrawBitmap(*default_feed,350,30,true);
+       }
 }
 
 
@@ -185,5 +204,7 @@ void InternetVideoTransmissionFrame::OnTimer1Trigger(wxTimerEvent& event)
 
 void InternetVideoTransmissionFrame::OnButtonConnectClick(wxCommandEvent& event)
 {
-  StartupNetworkClient(,1234);
+ char ip_cstr[200];
+ strcpy( ip_cstr, (const char*)PeerIP->GetValue().mb_str(wxConvUTF8) );
+ StartupNetworkClient(ip_cstr,1234);
 }

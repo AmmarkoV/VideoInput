@@ -346,10 +346,13 @@
 
 1314284222 /usr/include/wx-2.8/wx/gtk/app.h
 
-1318554846 /home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/InternetVideoTransmissionMain.h
+1318559178 /home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/InternetVideoTransmissionMain.h
+	<wx/button.h>
 	<wx/menu.h>
 	<wx/statusbr.h>
 	<wx/frame.h>
+	<wx/stattext.h>
+	<wx/textctrl.h>
 	<wx/timer.h>
 
 1314284222 /usr/include/wx-2.8/wx/menu.h
@@ -728,8 +731,9 @@
 
 1314284222 /usr/include/wx-2.8/wx/generic/timer.h
 
-1318556122 source:/home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/InternetVideoTransmissionMain.cpp
+1318559094 source:/home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/InternetVideoTransmissionMain.cpp
 	"InternetVideoTransmissionMain.h"
+	"network_framework.h"
 	<wx/msgdlg.h>
 	<wx/dc.h>
 	<wx/dcclient.h>
@@ -1478,7 +1482,7 @@
 
 1316161437 /home/ammar/Documents/Programming/RoboVision/VideoInput/VideoInput.h
 
-1318556470 source:/home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/network_framework.cpp
+1318558319 source:/home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/network_framework.cpp
 	<stdlib.h>
 	<stdio.h>
 	<errno.h>
@@ -1496,5 +1500,5 @@
 	"network_framework.h"
 	"../VideoInput.h"
 
-1318556482 /home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/network_framework.h
+1318557112 /home/ammar/Documents/Programming/RoboVision/VideoInput/InternetVideoTransmission/network_framework.h
 

@@ -20,6 +20,8 @@
 #include <wx/timer.h>
 //*)
 
+
+
 class InternetVideoTransmissionFrame: public wxFrame
 {
     public:
@@ -52,8 +54,8 @@ class InternetVideoTransmissionFrame: public wxFrame
         wxButton* ButtonConnect;
         wxStatusBar* StatusBar1;
         wxStaticText* StaticText1;
+        wxTextCtrl* PeerIP;
         wxTimer Timer1;
-        wxTextCtrl* TextCtrl1;
         //*)
 
         DECLARE_EVENT_TABLE()
