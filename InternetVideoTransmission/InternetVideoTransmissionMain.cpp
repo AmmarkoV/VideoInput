@@ -132,8 +132,12 @@ InternetVideoTransmissionFrame::~InternetVideoTransmissionFrame()
 
 void InternetVideoTransmissionFrame::OnQuit(wxCommandEvent& event)
 {
-    Close();
+    network_receive_stop=1;
+    network_transmit_stop=1;
     CloseVideoInputs();
+    wxSleep(1);
+    Close();
+
 }
 
 
