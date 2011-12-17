@@ -35,6 +35,8 @@ int ConvertImageFormats(char * filenamein,char * filenameout)
 { //Needs imagemagick package :)
  char execstr[256]={0};
  sprintf(execstr,"convert %s %s",filenamein,filenameout);
+ fprintf(stderr,"%s",execstr);
+
  int i = system(execstr);
  return i;
 }
@@ -121,16 +123,9 @@ int WritePPM(char * filename,struct Image * pic)
 
      fflush(fd);
      fclose(fd);
+
      return 1;
 	}
-
-  if ( compress_files )
-    { /*Convert to jpg*/
-         char filenameout[512]={0};
-         strcpy(filenameout,filename);
-         strcat(filenameout,"_.jpg");
-         ConvertImageFormats(filename,filenameout);
-    }
 
   return 0;
 }
