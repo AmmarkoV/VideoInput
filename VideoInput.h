@@ -134,6 +134,7 @@ void CompressRecordWithImageMagick(int state);
 void Play(char * filename);
 void PlayOne(char * filename);
 void Record(char * filename,int timestamp_filename,int compress);
+void RecordOneInMem(char * filename,int timestamp_filename,int compress,char * mem,unsigned long * mem_size);
 void RecordOne(char * filename,int timestamp_filename,int compress);
 void Stop();
 unsigned int VideoSimulationState();
