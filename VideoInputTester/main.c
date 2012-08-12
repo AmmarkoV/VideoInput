@@ -147,6 +147,16 @@ int main()
     sleep(1);
     printf("Done\n");
 
+   unsigned long pic_size=320*240*3;
+   char * pic = (char * ) malloc(sizeof(char) * pic_size);
+   if ( pic != 0 )
+   {
+      RecordOneInMem((char*) "raw",0,1,pic,&pic_size);
+      sleep(1);
+      printf("Done\n");
+      free(pic);
+  }
+
     printf ("I Will now try to emulate camera input using the written file called raw.ppm  ... ");
     Play((char*) "raw");
     sleep(1);
