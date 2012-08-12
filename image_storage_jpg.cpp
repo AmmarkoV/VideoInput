@@ -35,7 +35,6 @@ int empty_buffer(jpeg_compress_struct* cinfo) {
 /* finalize the buffer and do any cleanup stuff */
 void term_buffer(jpeg_compress_struct* cinfo)
 {
-   // fprintf(stderr,"Free Memory left after compression reported on term_buff is %0.2f Kb\n",(float) (cinfo->dest->free_in_buffer/1024));
 }
 
 
@@ -168,33 +167,15 @@ int WriteJPEG( char *filename,struct Image * pic,char *mem,unsigned long * mem_s
        }
 
     jpeg_finish_compress( &cinfo );
+    jpeg_destroy_compress( &cinfo );
 
 	 if ( (mem!=0) && (mem_size!=0) )
 	 {
-	     //Todo how big is the file ?
-	     //*mem_size = cinfo.dest->next_output_byte - raw_image;
-         *mem_size = initial_mem_size-cinfo.dest->free_in_buffer;
-
-         /*   Test code..
-          FILE *tmpfile = fopen("test.jpg","wb");
-          if (tmpfile!=0)
-	       {
-
-             //fwrite(pic->pixels,cinfo.dest->next_output_byte - (JOCTET*) pic->pixels,1,tmpfile);
-             fprintf(stderr,"Memory needed for raw picture is %0.2f Kb\n",(float) (initial_mem_size/1024));
-             fprintf(stderr,"Free Memory left after compression is %0.2f Kb\n",(float) (cinfo.dest->free_in_buffer/1024));
-             fprintf(stderr,"Memory needed for jpg picture is %u bytes\n",(unsigned int ) *mem_size);
-             fwrite(pic->pixels,1,*mem_size,tmpfile);
-             fflush(tmpfile);
-             fclose(tmpfile);
-	       }*/
-
-	     jpeg_destroy_compress( &cinfo );
+	   //Write back the file size of the compressed image
+       *mem_size = initial_mem_size-cinfo.dest->free_in_buffer;
 	 } else
 	 {
-	    /* similar to read file, clean up after we're done compressing */
-	   //jpeg_finish_compress( &cinfo );
-	   jpeg_destroy_compress( &cinfo );
+	   /* similar to read file, clean up after we're done compressing */
 	   fclose( outfile );
 	 }
 	/* success code is 1! */
