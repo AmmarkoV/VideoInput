@@ -168,7 +168,7 @@ int WriteJPEG( char *filename,struct Image * pic,char *mem,unsigned long * mem_s
 	 if ( (mem!=0) && (mem_size!=0) )
 	 {
 	     //Todo how big is the file ?
-	     //*mem_size = cinfo.next_scanline * cinfo.image_width *  cinfo.input_components;
+	     *mem_size = cinfo.dest->next_output_byte - raw_image;
 	 } else
 	 {
 	   fclose( outfile );

@@ -3,4 +3,4 @@
 git reset --hard HEAD
 git pull
 ./make
-exit 0
+exit 0 
