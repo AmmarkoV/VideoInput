@@ -58,7 +58,7 @@ int main()
 
     struct timespec feed_start,feed_end;
     clock_gettime(CLOCK_REALTIME,&feed_start);
-    if ( InitVideoFeed(0,(char *) "/dev/video0",320,240,BITRATE,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
+    if ( InitVideoFeed(0,(char *) "/dev/video0",320,240,BITRATE,25,SNAPSHOTS_ON,feedsettings)==1  ) { printf(" .. done \n"); } else
                                                                                             { printf(" .. failed \n"); return 0; }
 
     printf("Waiting for loop to begin receiving video ");
