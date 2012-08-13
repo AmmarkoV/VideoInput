@@ -279,7 +279,7 @@ int CloseVideoFeed( int inpt )
 }
 
 
-int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings)
+int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,int framespersecond,char snapshots_on,struct VideoFeedSettings videosettings)
 {
    camera_feeds[inpt].video_simulation=NO_VIDEO_AVAILIABLE;
    printf("Initializing Video Feed %u ( %s ) @ %u/%u \n",inpt,viddev,width,height);
@@ -371,7 +371,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char 
     camera_feeds[inpt].stop_snap_loop=0;
     camera_feeds[inpt].loop_thread=0;
 
-    ChooseDifferentSoftFramerate(inpt,25); // Go for a good old solid PAL 25 fps , ( the PS3 cameras may be snapping at 120fps , but VisualCortex without
+    ChooseDifferentSoftFramerate(inpt,framespersecond); // Go for a good old solid PAL 25 fps , ( the PS3 cameras may be snapping at 120fps , but VisualCortex without
                                            // hardware acceleration can`t go more than 6-8 fps )
 
     struct ThreadPassParam param={0};
