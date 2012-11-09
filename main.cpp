@@ -796,6 +796,8 @@ void RecordOneInMem(char * filename,int timestamp_filename,int compress,char * m
           camera_feeds[i].mem_buffer_for_recording_size=mem_size;
 
         UnpauseFeed(i);
+
+        while (camera_feeds[i].video_simulation == RECORDING_ONE_ON) { usleep(1); }
       }
     strcpy(video_simulation_path,filename);
 }

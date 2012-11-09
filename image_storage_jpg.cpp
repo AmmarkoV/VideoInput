@@ -6,12 +6,12 @@
 #include "image_storage_jpg.h"
 
 /* we will be using this uninitialized pointer later to store raw, uncompressd image */
-unsigned char *raw_image = NULL;
+//unsigned char *raw_image = NULL;
 
 /* dimensions of the image we want to write */
-int JPEGwidth = 1600;
-int JPEGheight = 1200;
-int JPEGbytes_per_pixel = 3;   /* or 1 for GRACYSCALE images */
+//int JPEGwidth = 1600;
+//int JPEGheight = 1200;
+//int JPEGbytes_per_pixel = 3;   /* or 1 for GRACYSCALE images */
 
 /**
  * read_jpeg_file Reads from a jpeg file on disk specified by filename and saves into the
@@ -23,19 +23,15 @@ int JPEGbytes_per_pixel = 3;   /* or 1 for GRACYSCALE images */
  */
 
 /* setup the buffer but we did that in the main function */
-void init_buffer(jpeg_compress_struct* cinfo) {}
+void init_buffer(struct jpeg_compress_struct* cinfo) { return ; }
 
 /* what to do when the buffer is full; this should almost never
  * happen since we allocated our buffer to be big to start with
  */
-int empty_buffer(jpeg_compress_struct* cinfo) {
-	return 1;
-}
+int empty_buffer(struct jpeg_compress_struct* cinfo) { return 1; }
 
 /* finalize the buffer and do any cleanup stuff */
-void term_buffer(jpeg_compress_struct* cinfo)
-{
-}
+void term_buffer(struct jpeg_compress_struct* cinfo) { return ; }
 
 
 int ReadJPEG( char *filename,struct Image * pic)
