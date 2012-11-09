@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#ifndef V4L2_H_INCLUDED
+#define V4L2_H_INCLUDED
+
 //#include <asm-i386/types.h>
 #include <linux/types.h>
 #include <linux/videodev2.h>
@@ -63,3 +67,5 @@ class V4L2
   void init_mmap(void);
   void init_userp(unsigned int buffer_size);
 };
+
+#endif

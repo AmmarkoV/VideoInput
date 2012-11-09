@@ -31,80 +31,35 @@
 #include "image_storage.h"
 #include "image_storage_png.h"
 #include "image_storage_jpg.h"
+#include "state.h"
 #include "tools.h"
 
-#define LIVE_ON 0
-#define RECORDING_ON 1
-#define RECORDING_ONE_ON 2
-#define PLAYBACK_ON 3
-#define PLAYBACK_ON_LOADED 4
-#define WORKING 5
-#define NO_VIDEO_AVAILIABLE 6
+
+#define DO_NOT_RETURN_NULL_POINTERS 1
 
 
 char * VIDEOINPT_VERSION=(char *) "0.251 RGB24/YUYV compatible";
-int do_not_return_zero_pointers=1;
 int increase_priority=0;
 
 unsigned int DEBUG=0;
 
-struct Video
-{
-  /* DEVICE NAME */
-  char * videoinp;
-  unsigned int height;
-  unsigned int width;
-  unsigned int frame_rate;
-  unsigned int sleep_time_per_frame_microseconds;
-  unsigned int frame_already_passed;
-
-  /* VIDEO 4 LINUX DATA */
-  struct v4l2_format fmt;
-  void *frame;
-  unsigned int size_of_frame;
-  V4L2 *v4l2_intf;
-
-  /* CAMERA INTRINSIC PARAMETERS */
-  double fx,fy,cx,cy;
-  double k1,k2,p1,p2,k3;
-
-  /* DATA NEEDED FOR DECODERS TO WORK */
-  unsigned int input_pixel_format;
-  unsigned int input_pixel_format_bitdepth;
-  char * decoded_pixels;
-  int frame_decoded;
-
-  /*VIDEO SIMULATION DATA*/
-  struct Image rec_video;
-  int video_simulation;
-  int keep_timestamp;
-  int compress;
-  char * mem_buffer_for_recording;
-  unsigned long * mem_buffer_for_recording_size;
-
-  /* THREADING DATA */
-  int thread_alive_flag;
-  int snap_paused; /* If set to 1 Will continue to snap frames but not save the reference ( that way video loop wont die out ) */
-  int snap_lock; /* If set to 1 Will not snap frames at all ( video loop will die out after a while ) */
-  int stop_snap_loop;
-  pthread_t loop_thread;
-};
 
 struct ThreadPassParam
 {
     int feednum;
 };
 
-int total_cameras=0;
-unsigned char * empty_frame=0;
-unsigned int largest_feed_x=320;
-unsigned int largest_feed_y=240;
-
-struct Video * camera_feeds=0;
-char video_simulation_path[256]={0};
 io_method io=IO_METHOD_MMAP; /*IO_METHOD_MMAP;  IO_METHOD_READ; IO_METHOD_USERPTR;*/
 
 void * SnapLoop(void *ptr );
+
+
+char * VideoInput_Version()
+{
+  return VIDEOINPT_VERSION;
+}
+
+
 
 int ReallocEmptyFrame(unsigned int new_size_x,unsigned int new_size_y)
 
@@ -113,7 +68,7 @@ int ReallocEmptyFrame(unsigned int new_size_x,unsigned int new_size_y)
   that needs to be managed carefully..!
  */
 {
-    if ( !do_not_return_zero_pointers )
+    if ( !DO_NOT_RETURN_NULL_POINTERS )
       {
           return 0;
       }
@@ -141,12 +96,6 @@ int ReallocEmptyFrame(unsigned int new_size_x,unsigned int new_size_y)
 
     return 1;
 }
-
-char * VideoInput_Version()
-{
-  return VIDEOINPT_VERSION;
-}
-
 
 
 int VideoInputsOk()
@@ -388,32 +337,37 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,int f
   return 1;
 }
 
+
+
+
+
+
 int ResetVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,char snapshots_on,struct VideoFeedSettings videosettings)
 {
-  fprintf(stderr,"ResetVideoFeed Not implemented, it should reset feed with new settings\n");
-  return 0;
+   if (!VideoInputsOk()) return 0;
+  return StateManagement_ResetVideoFeed(inpt,viddev,width,height,bitdepth,snapshots_on,videosettings);
 }
 
 
 int ResetFeed(int feednum)
 {
-  fprintf(stderr,"ResetFeed Not implemented , it should reset feed with the same settings as the original initialization\n");
-  return 0;
+  if (!VideoInputsOk()) return 0;
+  return StateManagement_ResetFeed(feednum);
 }
 
 int PauseFeed(int feednum)
 {
- if (!VideoInputsOk()) return 0;
- camera_feeds[feednum].snap_paused=1;
- return 1;
+  if (!VideoInputsOk()) return 0;
+  return StateManagement_PauseFeed(feednum);
 }
 
 int UnpauseFeed(int feednum)
 {
- if (!VideoInputsOk()) return 0;
- camera_feeds[feednum].snap_paused=0;
- return 1;
+  if (!VideoInputsOk()) return 0;
+  return StateManagement_UnpauseFeed(feednum);
 }
+
+
 
 
 int DecodePixels(int webcam_id)
@@ -721,96 +675,48 @@ void * SnapLoop( void * ptr)
    return ( void * ) 0 ;
 }
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  * SNAPSHOT RECORDING
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
 void Play(char * filename)
 {
-   /*Needs an implementation*/
-   PlayOne(filename);
+    if (!VideoInputsOk()) return;
+    StateManagement_SetToPlay(filename);
 }
 
 void PlayOne(char * filename)
 {
     if (!VideoInputsOk()) return;
-    if ( strlen( filename ) > 250 ) return;
-
-    /*Prepare*/
-    strcpy(video_simulation_path,filename);
-
-
-    int i=0;
-    for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = PLAYBACK_ON;
-
+    StateManagement_SetToPlayOne(filename);
 }
 
-
-void CompressRecordWithImageMagick(int state)
-{
-  compress_files=state;
-}
 
 void Record(char * filename,int timestamp_filename,int compress)
 {
     if (!VideoInputsOk()) return;
-    if ( strlen( filename ) > 250 ) return;
-
-    int i=0;
-    for (i=0; i<total_cameras; i++)
-     {
-         PauseFeed(i);
-           camera_feeds[i].video_simulation = RECORDING_ON;
-           camera_feeds[i].keep_timestamp = timestamp_filename;
-           camera_feeds[i].compress = compress;
-         UnpauseFeed(i);
-     }
-
-    strcpy(video_simulation_path,filename);
+    StateManagement_SetToRecord(filename,timestamp_filename,compress);
 }
 
 
 void RecordOneInMem(char * filename,int timestamp_filename,int compress,char * mem,unsigned long * mem_size)
 {
-  if (!VideoInputsOk()) return;
-
-    if ( strlen( filename ) > 250 ) return;
-
-    int i=0;
-    for (i=0; i<total_cameras; i++)
-      {
-        PauseFeed(i);
-          camera_feeds[i].video_simulation = RECORDING_ONE_ON;
-          camera_feeds[i].keep_timestamp = timestamp_filename;
-          camera_feeds[i].compress = compress;
-          camera_feeds[i].mem_buffer_for_recording=mem;
-          camera_feeds[i].mem_buffer_for_recording_size=mem_size;
-
-        UnpauseFeed(i);
-
-        while (camera_feeds[i].video_simulation == RECORDING_ONE_ON) { usleep(1); }
-      }
-    strcpy(video_simulation_path,filename);
+   if (!VideoInputsOk()) return;
+   StateManagement_SetToRecordOneInMem(filename,timestamp_filename,compress,mem,mem_size);
 }
 
 
 void RecordOne(char * filename,int timestamp_filename,int compress)
 {
-   return RecordOneInMem(filename,timestamp_filename,compress,0,0);
+   if (!VideoInputsOk()) return;
+   StateManagement_SetToRecordOne(filename,timestamp_filename,compress);
 }
 
 void Stop()
 {
-  if (!VideoInputsOk()) return;
-
-     int i=0;
-     for (i=0; i<total_cameras; i++)  camera_feeds[i].video_simulation = LIVE_ON;
+   if (!VideoInputsOk()) return;
+   StateManagement_SetToStop();
 }
 
 unsigned int VideoSimulationState()
 {
-  if (!VideoInputsOk()) return NO_VIDEO_AVAILIABLE;
-  return camera_feeds[0].video_simulation;
+    if (!VideoInputsOk()) return NO_VIDEO_AVAILIABLE;
+    return StateManagement_GetVideoSimulationState();
 }
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  * SNAPSHOT RECORDING
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
