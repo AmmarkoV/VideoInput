@@ -23,13 +23,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
+
 #include "V4L2.h"
 #include "PixelFormats.h"
 #include "PixelFormatConversions.h"
 #include "image_storage.h"
 #include "image_storage_png.h"
 #include "image_storage_jpg.h"
-#include <unistd.h>
+#include "tools.h"
 
 #define LIVE_ON 0
 #define RECORDING_ON 1
@@ -40,7 +42,7 @@
 #define NO_VIDEO_AVAILIABLE 6
 
 
-char * VIDEOINPT_VERSION=(char *) "0.248 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.251 RGB24/YUYV compatible";
 int do_not_return_zero_pointers=1;
 int increase_priority=0;
 
@@ -145,18 +147,6 @@ char * VideoInput_Version()
   return VIDEOINPT_VERSION;
 }
 
-
-char FileExists(char * filename)
-{
- FILE *fp = fopen(filename,"r");
- if( fp ) { /* exists */
-            fclose(fp);
-            return 1;
-          }
-          else
-          { /* doesnt exist */ }
- return 0;
-}
 
 
 int VideoInputsOk()
@@ -286,7 +276,7 @@ int InitVideoFeed(int inpt,char * viddev,int width,int height,int bitdepth,int f
    ReallocEmptyFrame(width,height);
 
    if (!VideoInputsOk()) return 0;
-   if ( (!FileExists(viddev)) ) { fprintf(stderr,"\n\nCheck for the webcam (%s) returned false..\n PLEASE CONNECT V4L2 COMPATIBLE CAMERA!!!!!\n\n\n",viddev); return 0; }
+   if ( (!FileExistsVideoInput(viddev)) ) { fprintf(stderr,"\n\nCheck for the webcam (%s) returned false..\n PLEASE CONNECT V4L2 COMPATIBLE CAMERA!!!!!\n\n\n",viddev); return 0; }
 
 
    camera_feeds[inpt].videoinp = viddev; /*i.e. (char *) "/dev/video0";*/

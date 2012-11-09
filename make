@@ -14,9 +14,10 @@ gcc -c image_storage_jpg.cpp -o image_storage_jpg.o
 gcc -c V4L2.cpp -o V4L2.o
 gcc -c PrintV4L2.cpp -o PrintV4L2.o
 gcc -c PixelFormats.cpp -o PixelFormats.o 
+gcc -c tools.cpp -o tools.o 
 gcc -c PixelFormatConversions.cpp -o PixelFormatConversions.o 
 
-ar  rcs libVideoInput.a main.o image_storage.o image_storage_png.o image_storage_jpg.o V4L2.o PrintV4L2.o PixelFormats.o PixelFormatConversions.o 
+ar  rcs libVideoInput.a main.o image_storage.o image_storage_png.o image_storage_jpg.o V4L2.o PrintV4L2.o PixelFormats.o tools.o PixelFormatConversions.o 
 
 rm main.o image_storage.o image_storage_png.o V4L2.o PrintV4L2.o PixelFormats.o PixelFormatConversions.o 
  
