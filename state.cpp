@@ -89,13 +89,10 @@ void StateManagement_SetToRecord(char * filename,int timestamp_filename,int comp
 }
 
 
-void StateManagement_SetToRecordOneInMem(char * filename,int timestamp_filename,int compress,char * mem,unsigned long * mem_size)
-{
-    if ( strlen( filename ) > 250 ) return;
 
-    int i=0;
-    for (i=0; i<total_cameras; i++)
-      {
+void StateManagement_SetToWebcamRecordOneInMem(int i,char * filename,int timestamp_filename,int compress,char * mem,unsigned long * mem_size)
+{
+
         StateManagement_PauseFeed(i);
 
           camera_feeds[i].video_simulation = RECORDING_ONE_ON;
@@ -107,6 +104,17 @@ void StateManagement_SetToRecordOneInMem(char * filename,int timestamp_filename,
         StateManagement_UnpauseFeed(i);
 
         while (camera_feeds[i].video_simulation == RECORDING_ONE_ON) { usleep(1); }
+}
+
+
+void StateManagement_SetToRecordOneInMem(char * filename,int timestamp_filename,int compress,char * mem,unsigned long * mem_size)
+{
+    if ( strlen( filename ) > 250 ) return;
+
+    int i=0;
+    for (i=0; i<total_cameras; i++)
+      {
+        StateManagement_SetToWebcamRecordOneInMem(i,filename,timestamp_filename,compress,mem,mem_size);
       }
     strcpy(video_simulation_path,filename);
 }

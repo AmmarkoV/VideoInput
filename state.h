@@ -68,6 +68,7 @@ int StateManagement_PauseFeed(int feednum);
 int StateManagement_UnpauseFeed(int feednum);
 
 
+void StateManagement_SetToWebcamRecordOneInMem(int i,char * filename,int timestamp_filename,int compress,char * mem,unsigned long * mem_size);
 
 void StateManagement_SetToPlay(char * filename);
 void StateManagement_SetToPlayOne(char * filename);

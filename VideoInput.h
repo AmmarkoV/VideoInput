@@ -128,7 +128,7 @@ unsigned char * VideoInput_GetFrame(int webcam_id);
 unsigned int VideoInput_NewFrameAvailiable(int webcam_id);
 void VideoInput_SignalFrameProcessed(int webcam_id);
 
-void VideoInput_SaveFrameJPEGMemory(char * mem,unsigned long * mem_size);
+void VideoInput_SaveFrameJPEGMemory(int webcam_id,char * mem,unsigned long * mem_size);
 
 // Playback / Recording
 void Play(char * filename);

@@ -598,9 +598,9 @@ void * SnapLoop( void * ptr)
 
 
 
-void VideoInput_SaveFrameJPEGMemory(char * mem,unsigned long * mem_size)
+void VideoInput_SaveFrameJPEGMemory(int webcam_id,char * mem,unsigned long * mem_size)
 {
-   StateManagement_SetToRecordOneInMem("internal.jpg",0,1,mem,mem_size);
+   StateManagement_SetToWebcamRecordOneInMem(webcam_id,"internal.jpg",0,1,mem,mem_size);
 }
 
 
