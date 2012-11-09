@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_workspace_file>
+	<Workspace title="Workspace">
+		<Project filename="VideoInput.cbp" />
+		<Project filename="VideoSnapShot/VideoSnapShot.cbp" active="1" />
+		<Project filename="VideoInputTester/VideoInputTester.cbp" />
+		<Project filename="VideoInputGUITester/VideoInputGUITester.cbp" />
+	</Workspace>
+</CodeBlocks_workspace_file>

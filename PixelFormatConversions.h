@@ -1,6 +1,10 @@
 #ifndef PIXELFORMATCONVERSIONS_H_INCLUDED
 #define PIXELFORMATCONVERSIONS_H_INCLUDED
 
+
+int DecodePixels(int webcam_id);
+unsigned char * ReturnDecodedLiveFrame(int webcam_id);
+
 int VideoFormatNeedsDecoding(int videoformat,int bitdepth);
 
 int YUYV_2_RGB(unsigned char *yuv, unsigned char *rgb, unsigned int width, unsigned int height);

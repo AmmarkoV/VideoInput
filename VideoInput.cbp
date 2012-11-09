@@ -56,6 +56,10 @@
 		<Unit filename="image_storage_png.cpp" />
 		<Unit filename="image_storage_png.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="state.cpp" />
+		<Unit filename="state.h" />
+		<Unit filename="tools.cpp" />
+		<Unit filename="tools.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

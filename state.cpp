@@ -78,11 +78,11 @@ void StateManagement_SetToRecord(char * filename,int timestamp_filename,int comp
     int i=0;
     for (i=0; i<total_cameras; i++)
      {
-         PauseFeed(i);
+         StateManagement_PauseFeed(i);
            camera_feeds[i].video_simulation = RECORDING_ON;
            camera_feeds[i].keep_timestamp = timestamp_filename;
            camera_feeds[i].compress = compress;
-         UnpauseFeed(i);
+         StateManagement_UnpauseFeed(i);
      }
 
     strcpy(video_simulation_path,filename);
@@ -96,14 +96,15 @@ void StateManagement_SetToRecordOneInMem(char * filename,int timestamp_filename,
     int i=0;
     for (i=0; i<total_cameras; i++)
       {
-        PauseFeed(i);
+        StateManagement_PauseFeed(i);
+
           camera_feeds[i].video_simulation = RECORDING_ONE_ON;
           camera_feeds[i].keep_timestamp = timestamp_filename;
           camera_feeds[i].compress = compress;
           camera_feeds[i].mem_buffer_for_recording=mem;
           camera_feeds[i].mem_buffer_for_recording_size=mem_size;
 
-        UnpauseFeed(i);
+        StateManagement_UnpauseFeed(i);
 
         while (camera_feeds[i].video_simulation == RECORDING_ONE_ON) { usleep(1); }
       }

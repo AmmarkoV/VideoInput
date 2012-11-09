@@ -106,6 +106,22 @@ struct VideoFeedSettings
 
 char * VideoInput_Version();
 
+
+int VideoInput_InitializeLibrary(int number_of_inputs);
+int VideoInput_DeinitializeLibrary();
+
+int VideoInput_OpenFeed(int inpt,char * viddev,int width,int height,int bitdepth,int framespersecond,char snapshots_on,struct VideoFeedSettings videosettings);
+int VideoInput_ReOpenFeed(int inpt);
+int VideoInput_CloseFeed(int inpt);
+
+int VideoInput_PauseFeed(int feednum);
+int VideoInput_UnpauseFeed(int feednum);
+
+void   VideoInput_SetCameraParameter(int webcam_id,int param_id,double * param);
+double VideoInput_GetCameraParameter(int webcam_id,int param_id);
+
+
+/*
 int InitVideoInputs(int numofinputs);
 int CloseVideoInputs();
 
@@ -119,15 +135,16 @@ int ResetFeed(int feednum);
 void SetCameraParameter(int webcam_id,int param_id,double * param);
 double GetCameraParameter(int webcam_id,int param_id);
 
-
-int FeedReceiveLoopAlive(int feed_num);
 int PauseFeed(int feednum);
 int UnpauseFeed(int feednum);
+*/
 
-unsigned char * GetEmptyFrame();
-unsigned char * GetFrame(int webcam_id);
-unsigned int NewFrameAvailiable(int webcam_id);
-void SignalFrameProcessed(int webcam_id);
+int VideoInput_FeedReceiveLoopAlive(int feed_num);
+
+unsigned char * VideoInput_GetEmptyFrame();
+unsigned char * VideoInput_GetFrame(int webcam_id);
+unsigned int VideoInput_NewFrameAvailiable(int webcam_id);
+void VideoInput_SignalFrameProcessed(int webcam_id);
 
 // Playback / Recording
 void Play(char * filename);
