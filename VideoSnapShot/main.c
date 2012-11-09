@@ -46,7 +46,6 @@ int main()
 
     unsigned int milliseconds=0;
     unsigned int snapit=0;
-    signed int i;
     while (1)
      {
        VideoInput_GetFrame(0);

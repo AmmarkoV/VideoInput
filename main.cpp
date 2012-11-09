@@ -597,6 +597,13 @@ void * SnapLoop( void * ptr)
 }
 
 
+
+void VideoInput_SaveFrameJPEGMemory(char * mem,unsigned long * mem_size)
+{
+   StateManagement_SetToRecordOneInMem("internal.jpg",0,1,mem,mem_size);
+}
+
+
 void Play(char * filename)
 {
     if (!VideoInputsOk()) return;
