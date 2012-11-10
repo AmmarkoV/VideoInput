@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 char FileExistsVideoInput(char * filename)
 {
@@ -14,4 +15,12 @@ char FileExistsVideoInput(char * filename)
           else
           { /* doesnt exist */ }
  return 0;
+}
+
+
+int IncreasePriority()
+{
+     /*We want higher priority now..! :)*/
+     if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
+                           { fprintf(stderr,"Increased priority \n"); }
 }

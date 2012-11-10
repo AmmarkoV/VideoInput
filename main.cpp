@@ -34,12 +34,9 @@
 #include "state.h"
 #include "tools.h"
 
+//See state.h for some #defines that change  the library configuration
 
-#define DO_NOT_RETURN_NULL_POINTERS 1
-#define VIDEOINPUT_DEBUG 0
-#define VIDEOINPUT_INCREASEPRIORITY 0
-
-char * VIDEOINPT_VERSION=(char *) "0.251 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.253 RGB24/YUYV compatible";
 
 
 io_method io=IO_METHOD_MMAP; /*IO_METHOD_MMAP;  IO_METHOD_READ; IO_METHOD_USERPTR;*/
@@ -57,45 +54,6 @@ char * VideoInput_Version()
 {
   return VIDEOINPT_VERSION;
 }
-
-
-
-int ReallocEmptyFrame(unsigned int new_size_x,unsigned int new_size_y)
-
-/*This function reallocates empty_frame in order to make it point to a usable black screen buffer
-  this will help applications that wait for video always get a video frame instead of a zero pointer
-  that needs to be managed carefully..!
- */
-{
-    if ( !DO_NOT_RETURN_NULL_POINTERS )
-      {
-          return 0;
-      }
-
-    int change_made = 0;
-    if ( largest_feed_x < new_size_x ) { change_made = 1; largest_feed_x = new_size_x; }
-    if ( largest_feed_y < new_size_y ) { change_made = 1; largest_feed_y = new_size_y; }
-
-
-    if (  (change_made) || (empty_frame == 0) )
-      {
-          if ( empty_frame != 0 ) { free(empty_frame); }
-          empty_frame=(unsigned char * ) malloc(largest_feed_x * largest_feed_y * 3 * sizeof ( unsigned char) );
-          if (empty_frame==0) { fprintf(stderr,"Error allocating memory for empty_frame structure"); return 0; }
-
-          unsigned int i=0;
-          for (i=0; i<largest_feed_x * largest_feed_y * 3; i++) { empty_frame[i]=0;}
-
-          DrawLine_inFrame(0,0,largest_feed_x-1,largest_feed_y-1,255,0,0,empty_frame,3,largest_feed_x,largest_feed_y);
-          DrawLine_inFrame(0,largest_feed_y-1,largest_feed_x-1,0,255,0,0,empty_frame,3,largest_feed_x,largest_feed_y);
-
-
-          if (VIDEOINPUT_DEBUG) { fprintf(stderr,"Reallocating new `empty` frame with size %ux%u \n",largest_feed_x,largest_feed_y); }
-      }
-
-    return 1;
-}
-
 
 int VideoInputsOk()
 {
@@ -141,12 +99,8 @@ int VideoInput_InitializeLibrary(int numofinputs)
       if ( ret == 0 ) { printf("total video devices .. \n"); }
     }
 
-    if ( VIDEOINPUT_INCREASEPRIORITY )
-    {
-     /*We want higher priority now..! :)*/
-     if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n"); } else
-                           { fprintf(stderr,"Increased priority \n"); }
-    }
+
+    if ( VIDEOINPUT_INCREASEPRIORITY ) { IncreasePriority(); }
 
     total_cameras=numofinputs;
 
@@ -179,15 +133,15 @@ int VideoInput_DeinitializeLibrary()
         camera_feeds[i].v4l2_intf->freeBuffers();
         usleep(30);
 
-        if ( camera_feeds[i].decoded_pixels !=0 ) free( camera_feeds[i].decoded_pixels );
-        if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
-        if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
+        if ( camera_feeds[i].decoded_pixels !=0 )   { free( camera_feeds[i].decoded_pixels );   }
+        if ( camera_feeds[i].rec_video.pixels !=0 ) { free( camera_feeds[i].rec_video.pixels ); }
+        if ( camera_feeds[i].v4l2_intf != 0 )       { delete camera_feeds[i].v4l2_intf; }
        } else
        {
         fprintf(stderr,"Video Feed %u seems to be already dead , ensuring no memory leaks!\n",i);
         camera_feeds[i].stop_snap_loop=1;
-        if ( camera_feeds[i].rec_video.pixels !=0 ) free( camera_feeds[i].rec_video.pixels );
-        if ( camera_feeds[i].v4l2_intf != 0 ) { delete camera_feeds[i].v4l2_intf; }
+        if ( camera_feeds[i].rec_video.pixels !=0 ) { free( camera_feeds[i].rec_video.pixels ); }
+        if ( camera_feeds[i].v4l2_intf != 0 )       { delete camera_feeds[i].v4l2_intf; }
        }
      }
 
@@ -406,25 +360,22 @@ unsigned char * VideoInput_GetEmptyFrame()
 unsigned char * VideoInput_GetFrame(int webcam_id)
 {
   if (!VideoInputsOk()) return empty_frame;
-  int handled=0;
 
   switch(camera_feeds[webcam_id].video_simulation)
   {
-    case  LIVE_ON :
-                     handled=1;
-                     if (total_cameras>webcam_id) { return ReturnDecodedLiveFrame(webcam_id); } else
+    /*A Frame coming LIVE from the webcam..!*/
+    case  LIVE_ON : if (total_cameras>webcam_id) { return ReturnDecodedLiveFrame(webcam_id); } else
                                                   {   return empty_frame; }
     break;
 
-    case  PLAYBACK_ON_LOADED :
-                                handled=1;
-                                if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels; } else
+    /*A Frame that we have already loaded..!*/
+    case  PLAYBACK_ON_LOADED : if (total_cameras>webcam_id) {  return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels; } else
                                                              {  return empty_frame; }
     break;
 
+    /*A Frame coming from a series of files we are playing back..!*/
     case  PLAYBACK_ON :  {
-                          handled=1;
-
+                            /* THIS IS RETARDED AND HAS TO BE WRITTEN AGAIN..*/
                           char store_path[256]={0};
                           char last_part[6]="0.ppm";
                           last_part[0]='0'+webcam_id;
@@ -436,14 +387,12 @@ unsigned char * VideoInput_GetFrame(int webcam_id)
                           fprintf(stderr,"Reading Snapshot ( %s ) \n",store_path);
                           if ( camera_feeds[webcam_id].rec_video.pixels == 0 ) {  return empty_frame; }
                           return (unsigned char *) camera_feeds[webcam_id].rec_video.pixels;
+
+                          return empty_frame;
                          }
     break;
 
-    case  NO_VIDEO_AVAILIABLE : handled=1;  break;/* VIDEO DEVICE COULD BE DEAD , DO NOTHING!*/
-
-
-    default :
-       handled=0;  /* THE FRAME MODE IS SET ON AN UNKNOWN MODE*/
+    case  NO_VIDEO_AVAILIABLE :   break;/* VIDEO DEVICE COULD BE DEAD , DO NOTHING!*/
 
   };
   return empty_frame;
@@ -452,8 +401,7 @@ unsigned char * VideoInput_GetFrame(int webcam_id)
 unsigned int VideoInput_NewFrameAvailiable(int webcam_id)
 {
 
-    /* return 1;
-       ALWAYS NEW FRAME AVAILIABLE :P*/
+    /* return 1; ALWAYS NEW FRAME AVAILIABLE :P*/
 
     if ( camera_feeds[webcam_id].frame_already_passed==1) return 0;
     return 1;
@@ -544,13 +492,7 @@ void * SnapLoop( void * ptr)
        return 0;
      }
 
-    if ( VIDEOINPUT_INCREASEPRIORITY )
-    {
-     /*We want higher priority now..! :)*/
-     if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
-                           { fprintf(stderr,"Increased priority \n"); }
-
-    }
+    if ( VIDEOINPUT_INCREASEPRIORITY ) { IncreasePriority(); }
 
 
    printf("Try to snap #%d for the first time \n",feed_num);
@@ -600,7 +542,7 @@ void * SnapLoop( void * ptr)
 
 void VideoInput_SaveFrameJPEGMemory(int webcam_id,char * mem,unsigned long * mem_size)
 {
-   StateManagement_SetToWebcamRecordOneInMem(webcam_id,"internal.jpg",0,1,mem,mem_size);
+   StateManagement_SetToWebcamRecordOneInMem(webcam_id,(char*) "internal.jpg",0,1,mem,mem_size);
 }
 
 

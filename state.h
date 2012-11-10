@@ -9,6 +9,11 @@
 #include "PixelFormats.h"
 #include "PixelFormatConversions.h"
 
+
+#define DO_NOT_RETURN_NULL_POINTERS 1
+#define VIDEOINPUT_DEBUG 0
+#define VIDEOINPUT_INCREASEPRIORITY 0
+
 struct Video
 {
   /* DEVICE NAME */
