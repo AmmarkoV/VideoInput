@@ -156,7 +156,7 @@ int VideoInput_DeinitializeLibrary()
 
 int ChooseDifferentSoftFramerate(int inpt,unsigned int new_framerate_per_second)
 {
-    if ( new_framerate_per_second == 0 ) { return 0; }
+    if ( new_framerate_per_second == 0 ) { camera_feeds[inpt].sleep_time_per_frame_microseconds = 0; return 0; }
     camera_feeds[inpt].frame_rate=new_framerate_per_second;
     camera_feeds[inpt].sleep_time_per_frame_microseconds = (unsigned int ) 10000 / new_framerate_per_second;
     camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds * 100;
