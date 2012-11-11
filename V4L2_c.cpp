@@ -207,3 +207,59 @@ int freeBuffers_v4l2intf(struct V4L2_c_interface * v4l2_interface)
 
  return 1;
 }
+
+
+
+
+
+
+
+int startCapture_v4l2intf(struct V4L2_c_interface * v4l2_interface)
+{
+  enum v4l2_buf_type type;
+  unsigned int i;
+
+  switch (v4l2_interface->io)
+  {
+                    case IO_METHOD_READ:  /* Nothing to do. */ break;
+                    case IO_METHOD_MMAP:
+                                          for (i = 0; i < v4l2_interface->n_buffers; ++i)
+                                               {
+                                                  struct v4l2_buffer buf;
+                                                  CLEAR (buf);
+                                                  buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                                                  buf.memory = V4L2_MEMORY_MMAP;
+                                                  buf.index = i;
+                                                  if (-1 == xioctl (v4l2_interface->fd, VIDIOC_QBUF, &buf)) { fprintf(stderr,"Error VIDIOC_QBUF\n"); return 0; }
+                                               }
+                                          type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                                          if (-1 == xioctl (v4l2_interface->fd, VIDIOC_STREAMON, &type)) { fprintf(stderr,"Error VIDIOC_STREAMON\n");  return 0; }
+                     break;
+
+                     case IO_METHOD_USERPTR:
+                                              for (i = 0; i < v4l2_interface->n_buffers; ++i)
+                                                    {
+                                                      struct v4l2_buffer buf;
+                                                      CLEAR (buf);
+                                                      buf.type        = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                                                      buf.memory      = V4L2_MEMORY_USERPTR;
+                                                      buf.index       = i;
+                                                      buf.m.userptr   = (unsigned long) v4l2_interface->buffers[i].start;
+                                                      buf.length      = v4l2_interface->buffers[i].length;
+                                                      if (-1 == xioctl (v4l2_interface->fd, VIDIOC_QBUF, &buf)) { fprintf(stderr,"Error VIDIOC_QBUF\n"); return 0; }
+                                                     }
+                                               type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                                              if (-1 == xioctl (v4l2_interface->fd, VIDIOC_STREAMON, &type))  { fprintf(stderr,"Error VIDIOC_STREAMON\n"); return 0; }
+                    break;
+  }
+
+  return 1;
+}
+
+
+
+
+
+
+
+
