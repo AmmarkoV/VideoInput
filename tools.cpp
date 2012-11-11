@@ -22,5 +22,6 @@ int IncreasePriority()
 {
      /*We want higher priority now..! :)*/
      if ( nice(-4) == -1 ) { fprintf(stderr,"Error increasing priority on main video capture loop\n");} else
-                           { fprintf(stderr,"Increased priority \n"); }
+                           { fprintf(stderr,"Increased priority \n"); return 1; }
+     return 0;
 }

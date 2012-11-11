@@ -3,7 +3,19 @@
 
 #include <linux/types.h>
 #include <linux/videodev2.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/mman.h>
+#include <sys/ioctl.h>
+
+#include <errno.h>
+
+#include <asm/types.h>          /* for videodev2.h */
+
 #include "PrintV4L2.h"
+
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
@@ -43,11 +55,21 @@ struct V4L2_c_interface
   unsigned int n_buffers;
 };
 
-static int xioctl  (int   fd, int   request,  void *  arg);
-
 int populate_v4l2intf(struct V4L2_c_interface * v4l2_interface,char * device,int method_used);
 int destroy_v4l2intf(struct V4L2_c_interface * v4l2_interface);
 int getFileDescriptor_v4l2intf(struct V4L2_c_interface * v4l2_interface);
 
+int getcap_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_capability *cap);
+
+int setfmt_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_format fmt) ;
+int getfmt_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_format *fmt) ;
+
+int queryctrl_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_queryctrl *ctrl);
+int setctrl_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_control  control);
+int getctrl_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_control *control);
+
+int initread_v4l2intf(struct V4L2_c_interface * v4l2_interface,unsigned int buffer_size);
+int inituserp_v4l2intf(struct V4L2_c_interface * v4l2_interface,unsigned int buffer_size);
+int initmmap_v4l2intf(struct V4L2_c_interface * v4l2_interface);
 
 #endif // V4L2_C_H_INCLUDED

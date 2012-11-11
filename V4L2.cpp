@@ -19,14 +19,15 @@
 #include "V4L2_c.h"
 
 
-static int xioctl  (int   fd, int   request,  void *  arg)
-{
-        int r;
-        do r = ioctl (fd, request, arg);
-        while (-1 == r && EINTR == errno);
 
-        return r;
-}
+static int xioctl(int fd,int request,void * arg)
+{
+   int r;
+   do r = ioctl (fd, request, arg);
+   while (-1 == r && EINTR == errno);
+   return r;
+};
+
 
 static void errno_exit  (const char *   s)
 {

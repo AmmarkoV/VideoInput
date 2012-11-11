@@ -48,6 +48,8 @@
 		<Unit filename="PrintV4L2.h" />
 		<Unit filename="V4L2.cpp" />
 		<Unit filename="V4L2.h" />
+		<Unit filename="V4L2_c.cpp" />
+		<Unit filename="V4L2_c.h" />
 		<Unit filename="VideoInput.h" />
 		<Unit filename="image_storage.cpp" />
 		<Unit filename="image_storage.h" />
