@@ -18,9 +18,6 @@
  * http://staff.science.uva.nl/~bterwijn/Projects/V4L2/v4l2_website/v4l2spec.bytesex.org/spec-single/v4l2.html for Video For Linux documentation.
  */
 
-#define TIMEOUT_SEC 10
-#define TIMEOUT_USEC 0
-
 class V4L2
 {
  public:
