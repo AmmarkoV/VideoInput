@@ -257,9 +257,126 @@ int startCapture_v4l2intf(struct V4L2_c_interface * v4l2_interface)
 }
 
 
+int stopCapture_v4l2intf(struct V4L2_c_interface * v4l2_interface)
+{
+  enum v4l2_buf_type type;
+  switch (v4l2_interface->io)
+  {
+  case IO_METHOD_READ: /* Nothing to do. */ break;
+  case IO_METHOD_MMAP:
+  case IO_METHOD_USERPTR:   /*Common for MMAP and userptr*/
+                             type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                             if (-1 == xioctl (v4l2_interface->fd, VIDIOC_STREAMOFF, &type)) { fprintf(stderr,"Error VIDIOC_STREAMOFF"); return 0; }
+                             break;
+  }
+  return 1;
+}
 
 
 
+
+void * readFrame_v4l2intf(struct V4L2_c_interface * v4l2_interface)
+{
+  struct v4l2_buffer buf;
+  unsigned int i;
+
+  switch (v4l2_interface->io)
+  {
+
+    case IO_METHOD_READ:
+                            if (-1 == read (v4l2_interface->fd, v4l2_interface->buffers[0].start, v4l2_interface->buffers[0].length))
+                                  {
+                                     switch (errno) {
+                                                       case EAGAIN: return 0;
+                                                       case EIO: /* Could ignore EIO, see spec. */ /* fall through */
+                                                       default: fprintf(stderr,"Failed reading video stream\n");
+                                                       return 0;
+                                                     }
+                                  }
+     //Successful IO_METHOD_READ..
+     return v4l2_interface->buffers[0].start;
+    break;
+
+    case IO_METHOD_MMAP:
+                            CLEAR (buf);
+                            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                            buf.memory = V4L2_MEMORY_MMAP;
+                            if (-1 == xioctl (v4l2_interface->fd, VIDIOC_DQBUF, &buf))
+                                   {
+                                     switch (errno) {
+                                                        case EAGAIN: return 0;
+                                                        case EIO: /* Could ignore EIO, see spec. */ /* fall through */
+                                                        default: fprintf(stderr,"Failed VIDIOC_DQBUF\n");
+                                                        return 0;
+                                                      }
+                                    }
+
+                            //assert (buf.index < v4l2_interface->n_buffers);
+                            if (!buf.index<v4l2_interface->n_buffers) { fprintf(stderr,"assert (buf.index < v4l2_interface->n_buffers); failed.."); return 0; }
+                            if (-1 == xioctl (v4l2_interface->fd, VIDIOC_QBUF, &buf)) { fprintf(stderr,"Failed VIDIOC_QBUF\n"); return 0; }
+     //Successful IO_METHOD_MMAP..
+     return v4l2_interface->buffers[buf.index].start;
+    break;
+
+  case IO_METHOD_USERPTR:
+                           CLEAR (buf);
+                           buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                           buf.memory = V4L2_MEMORY_USERPTR;
+                           if (-1 == xioctl (v4l2_interface->fd, VIDIOC_DQBUF, &buf)) {
+                                                                                        switch (errno) {
+                                                                                                          case EAGAIN: return 0;
+                                                                                                          case EIO: /* Could ignore EIO, see spec. */ /* fall through */
+                                                                                                          default: fprintf(stderr,"Failed VIDIOC_DQBUF\n");
+                                                                                                          return 0;
+                                                                                                        }
+                                                                                      }
+                           for (i = 0; i < v4l2_interface->n_buffers; ++i)
+                                             if (buf.m.userptr == (unsigned long) v4l2_interface->buffers[i].start && buf.length == v4l2_interface->buffers[i].length) break;
+                           assert (i < v4l2_interface->n_buffers);
+                           if (-1 == xioctl (v4l2_interface->fd, VIDIOC_QBUF, &buf)) { fprintf(stderr,"Failed VIDIOC_QBUF\n"); return 0; }
+    //Successful IO_METHOD_USERPTR..
+    return (void *)(buf.m.userptr);
+    break;
+
+  }
+  return NULL;
+}
+
+
+
+
+
+
+
+
+
+void * getFrame_v4l2intf(struct V4L2_c_interface * v4l2_interface)
+{
+  for (;;)
+  {
+    fd_set fds;
+    struct timeval tv;
+    int r;
+    FD_ZERO (&fds);
+    FD_SET (v4l2_interface->fd, &fds);
+
+    /* Timeout for frame grabbing .. */
+    tv.tv_sec = TIMEOUT_SEC;
+    tv.tv_usec = TIMEOUT_USEC;
+    /* ----------------------------- */
+
+    r = select (v4l2_interface->fd + 1, &fds, 0, 0, &tv);
+    if (-1 == r) { if (EINTR == errno) continue; fprintf(stderr,"Error selecting stream\n");  return 0; }
+
+
+    if (0 == r) { fprintf (stderr, "Select call timed out\n"); return 0; }
+
+
+    void *p=readFrame_v4l2intf(v4l2_interface);
+    if (p!=0) return p;
+    /* EAGAIN - continue select loop. */
+  }
+}
 
 
 

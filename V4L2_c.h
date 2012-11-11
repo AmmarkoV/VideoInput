@@ -72,4 +72,7 @@ int initread_v4l2intf(struct V4L2_c_interface * v4l2_interface,unsigned int buff
 int inituserp_v4l2intf(struct V4L2_c_interface * v4l2_interface,unsigned int buffer_size);
 int initmmap_v4l2intf(struct V4L2_c_interface * v4l2_interface);
 
+int startCapture_v4l2intf(struct V4L2_c_interface * v4l2_interface);
+int stopCapture_v4l2intf(struct V4L2_c_interface * v4l2_interface);
+
 #endif // V4L2_C_H_INCLUDED
