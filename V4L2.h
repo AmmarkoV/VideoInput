@@ -9,20 +9,8 @@
 #include <linux/types.h>
 #include <linux/videodev2.h>
 #include "PrintV4L2.h"
+#include "V4L2_c.h"
 
-#define CLEAR(x) memset (&(x), 0, sizeof (x))
-
-typedef enum
-{
-  IO_METHOD_READ,
-  IO_METHOD_MMAP,
-  IO_METHOD_USERPTR,
-} io_method;
-
-struct buffer {
-  void * start;
-  size_t length;
-};
 
 /**
  * Class for getting frames from a camera via the Video For Linux library. This
