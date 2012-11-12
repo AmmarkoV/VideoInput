@@ -311,8 +311,8 @@ void * readFrame_v4l2intf(struct V4L2_c_interface * v4l2_interface)
                                                       }
                                     }
 
-                            assert (buf.index < v4l2_interface->n_buffers); //TODO : REPLACE THIS!
-                            //if (buf.index<v4l2_interface->n_buffers) { fprintf(stderr,"assert (buf.index < v4l2_interface->n_buffers); failed.."); /*return 0;*/ }
+                            //assert (buf.index < v4l2_interface->n_buffers);
+                            if ( !(buf.index<v4l2_interface->n_buffers) ) { fprintf(stderr,"assert (buf.index < v4l2_interface->n_buffers); failed.."); return 0; }
                             if (-1 == xioctl (v4l2_interface->fd, VIDIOC_QBUF, &buf)) { fprintf(stderr,"Failed VIDIOC_QBUF\n"); return 0; }
      //Successful IO_METHOD_MMAP..
      return v4l2_interface->buffers[buf.index].start;

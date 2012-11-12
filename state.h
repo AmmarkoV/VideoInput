@@ -3,7 +3,6 @@
 
 
 
-#include "V4L2.h"
 #include "V4L2_c.h"
 #include "VideoInput.h"
 #include "image_storage.h"

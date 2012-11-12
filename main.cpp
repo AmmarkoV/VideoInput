@@ -25,7 +25,6 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "V4L2.h"
 #include "V4L2_c.h"
 #include "PixelFormats.h"
 #include "PixelFormatConversions.h"
