@@ -4,6 +4,7 @@
 
 
 #include "V4L2.h"
+#include "V4L2_c.h"
 #include "VideoInput.h"
 #include "image_storage.h"
 #include "PixelFormats.h"
@@ -28,7 +29,8 @@ struct Video
   struct v4l2_format fmt;
   void *frame;
   unsigned int size_of_frame;
-  V4L2 *v4l2_intf;
+  //V4L2 *v4l2_intf;
+  struct V4L2_c_interface v4l2_interface;
 
   /* CAMERA INTRINSIC PARAMETERS */
   double fx,fy,cx,cy;

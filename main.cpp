@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "V4L2.h"
+#include "V4L2_c.h"
 #include "PixelFormats.h"
 #include "PixelFormatConversions.h"
 #include "image_storage.h"
@@ -36,7 +37,7 @@
 
 //See state.h for some #defines that change  the library configuration
 
-char * VIDEOINPT_VERSION=(char *) "0.253 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.258 RGB24/YUYV compatible";
 
 
 io_method io=IO_METHOD_MMAP; /*IO_METHOD_MMAP;  IO_METHOD_READ; IO_METHOD_USERPTR;*/
@@ -82,7 +83,8 @@ int VideoInput_InitializeLibrary(int numofinputs)
           camera_feeds[i].thread_alive_flag=0;
           camera_feeds[i].rec_video.pixels=0;
           camera_feeds[i].frame=0;
-          camera_feeds[i].v4l2_intf=0;
+          //camera_feeds[i].v4l2_intf=0;
+          memset(&camera_feeds[i].v4l2_interface , 0 , sizeof (struct V4L2_c_interface)) ;
           camera_feeds[i].fx=0,camera_feeds[i].fy=0,camera_feeds[i].cx=0,camera_feeds[i].cy=0;
           camera_feeds[i].k1=0,camera_feeds[i].k2=0,camera_feeds[i].p1=0,camera_feeds[i].p2=0,camera_feeds[i].k3=0;
 
@@ -128,20 +130,26 @@ int VideoInput_DeinitializeLibrary()
           }
 
         usleep(30);
-        camera_feeds[i].v4l2_intf->stopCapture();
+        //camera_feeds[i].v4l2_intf->stopCapture();
+        stopCapture_v4l2intf(&camera_feeds[i].v4l2_interface);
         usleep(30);
-        camera_feeds[i].v4l2_intf->freeBuffers();
+        //camera_feeds[i].v4l2_intf->freeBuffers();
+        freeBuffers_v4l2intf(&camera_feeds[i].v4l2_interface);
         usleep(30);
 
         if ( camera_feeds[i].decoded_pixels !=0 )   { free( camera_feeds[i].decoded_pixels );   }
         if ( camera_feeds[i].rec_video.pixels !=0 ) { free( camera_feeds[i].rec_video.pixels ); }
-        if ( camera_feeds[i].v4l2_intf != 0 )       { delete camera_feeds[i].v4l2_intf; }
+        //if ( camera_feeds[i].v4l2_intf != 0 )       { delete camera_feeds[i].v4l2_intf; }
+        destroy_v4l2intf(&camera_feeds[i].v4l2_interface);
+
        } else
        {
         fprintf(stderr,"Video Feed %u seems to be already dead , ensuring no memory leaks!\n",i);
         camera_feeds[i].stop_snap_loop=1;
         if ( camera_feeds[i].rec_video.pixels !=0 ) { free( camera_feeds[i].rec_video.pixels ); }
-        if ( camera_feeds[i].v4l2_intf != 0 )       { delete camera_feeds[i].v4l2_intf; }
+        //if ( camera_feeds[i].v4l2_intf != 0 )       { delete camera_feeds[i].v4l2_intf; }
+        destroy_v4l2intf(&camera_feeds[i].v4l2_interface);
+
        }
      }
 
@@ -233,6 +241,22 @@ int VideoInput_OpenFeed(int inpt,char * viddev,int width,int height,int bitdepth
 
 
       fprintf(stderr,(char *)"Starting camera , if it segfaults consider running \nLD_PRELOAD=/usr/lib/libv4l/v4l2convert.so  executable_name\n");
+
+      if (!populate_v4l2intf(&camera_feeds[inpt].v4l2_interface,camera_feeds[inpt].videoinp,io) ) { fprintf(stderr,"Could not populate v4l2 interface..\n"); return 0; }
+
+
+      if ( setfmt_v4l2intf(&camera_feeds[inpt].v4l2_interface,camera_feeds[inpt].fmt) == 0 )
+                { fprintf(stderr,"Device does not support settings:\n"); return 0; } else
+                 {
+                    if (VIDEOINPUT_DEBUG) { fprintf(stderr,"No errors , starting camera %u / locking memory..!",inpt); }
+
+                    if ( !initBuffers_v4l2intf(&camera_feeds[inpt].v4l2_interface) ) { fprintf(stderr,"Could not initialize buffers..\n"); return 0; }
+                    if ( !startCapture_v4l2intf(&camera_feeds[inpt].v4l2_interface) ) { fprintf(stderr,"Could not start capture..\n"); return 0; }
+
+                    camera_feeds[inpt].frame = empty_frame;
+                 }
+
+      /*
       camera_feeds[inpt].v4l2_intf = new V4L2(camera_feeds[inpt].videoinp, io);
        if ( camera_feeds[inpt].v4l2_intf->set(camera_feeds[inpt].fmt) == 0 ) { fprintf(stderr,"Device does not support settings:\n"); return 0; }
          else
@@ -242,7 +266,7 @@ int VideoInput_OpenFeed(int inpt,char * viddev,int width,int height,int bitdepth
            camera_feeds[inpt].v4l2_intf->startCapture();
 
            camera_feeds[inpt].frame = empty_frame;
-       }
+       }*/
 
    if (VIDEOINPUT_DEBUG) { printf("Enabling Snapshots!\n"); }
    camera_feeds[inpt].rec_video.pixels = 0; /* Xreiazontai etsi wste an den theloume snapshots na min crasharei to sympan*/
@@ -496,7 +520,9 @@ void * SnapLoop( void * ptr)
 
 
    printf("Try to snap #%d for the first time \n",feed_num);
-   camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+   //camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+   camera_feeds[feed_num].frame=getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
+   if (camera_feeds[feed_num].frame==0) { fprintf(stderr,"Got back a null frame while snapping for the very first time\n"); }
    printf("Video capture thread #%d is alive \n",feed_num);
    camera_feeds[feed_num].thread_alive_flag=1;
 
@@ -507,8 +533,14 @@ void * SnapLoop( void * ptr)
        if ( camera_feeds[feed_num].snap_lock == 0 )
        { /* WE DONT NEED THE SNAPSHOT TO BE LOCKED!*/
           if ( camera_feeds[feed_num].snap_paused == 1 )
-           { camera_feeds[feed_num].v4l2_intf->getFrame(); /*Get frame only to keep V4L2 running ? */ } else
-           { camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame(); }
+           {
+             //camera_feeds[feed_num].v4l2_intf->getFrame(); /*Get frame only to keep V4L2 running ? */
+             getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
+           } else
+           {
+             //camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
+             camera_feeds[feed_num].frame=getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
+           }
 
           camera_feeds[feed_num].frame_already_passed=0; /* <- This signals to a program linked to VideoInput that there is a new frame just snapped*/
           camera_feeds[feed_num].frame_decoded=0; //<- This signals that we have a new frame that MAY need to be decoded to RGB24
