@@ -101,7 +101,7 @@ int getctrl_v4l2intf(struct V4L2_c_interface * v4l2_interface,struct v4l2_contro
 
 int initread_v4l2intf(struct V4L2_c_interface * v4l2_interface,unsigned int buffer_size)
 {
-  v4l2_interface->buffers = (buffer *)(calloc (1, sizeof (*v4l2_interface->buffers)));
+  v4l2_interface->buffers = (struct buffer *)(calloc (1, sizeof (*v4l2_interface->buffers)));
   if (!v4l2_interface->buffers) { fprintf (stderr, "Out of memory , while initializing for read operations\n"); return 0; }
 
   v4l2_interface->buffers[0].length = buffer_size;
@@ -121,7 +121,7 @@ int inituserp_v4l2intf(struct V4L2_c_interface * v4l2_interface,unsigned int buf
                          { fprintf(stderr,"Error while calling VIDIOC_REQBUFS\n"); return 0; }
   }
 
-  v4l2_interface->buffers = (buffer *)(calloc (4, sizeof (*v4l2_interface->buffers)));
+  v4l2_interface->buffers = (struct buffer *)(calloc (4, sizeof (*v4l2_interface->buffers)));
   if (!v4l2_interface->buffers) { fprintf (stderr, "Could not allocate memory for a user video buffer \n"); return 0; }
 
   for (v4l2_interface->n_buffers = 0; v4l2_interface->n_buffers < 4; ++v4l2_interface->n_buffers)
@@ -149,7 +149,7 @@ int initmmap_v4l2intf(struct V4L2_c_interface * v4l2_interface)
 
   if (req.count < 2)    { fprintf (stderr, "Insufficient buffer memory on %s\n",v4l2_interface->device); return 0;  }
 
-  v4l2_interface->buffers = (buffer *)(calloc (req.count, sizeof (*v4l2_interface->buffers)));
+  v4l2_interface->buffers = (struct buffer *)(calloc (req.count, sizeof (*v4l2_interface->buffers)));
   if (!v4l2_interface->buffers) { fprintf (stderr, "Out of memory\n"); return 0;  }
 
   for (v4l2_interface->n_buffers = 0; v4l2_interface->n_buffers < req.count; ++v4l2_interface->n_buffers)
@@ -197,11 +197,12 @@ int initBuffers_v4l2intf(struct V4L2_c_interface * v4l2_interface)
 
 int freeBuffers_v4l2intf(struct V4L2_c_interface * v4l2_interface)
 {
+  int i = 0;
   switch (v4l2_interface->io)
   {
     case IO_METHOD_READ:    free(v4l2_interface->buffers[0].start); break;
-    case IO_METHOD_MMAP:    for (int i = 0; i < (int)v4l2_interface->n_buffers; ++i) { if (-1 == munmap ( v4l2_interface->buffers[i].start, v4l2_interface->buffers[i].length)) { fprintf(stderr,"Error freeing buffers \n"); return 0; } } break;
-    case IO_METHOD_USERPTR: for (int i = 0; i < (int)v4l2_interface->n_buffers; ++i) { free (v4l2_interface->buffers[i].start); } break;
+    case IO_METHOD_MMAP:    for (i = 0; i < (int)v4l2_interface->n_buffers; ++i) { if (-1 == munmap ( v4l2_interface->buffers[i].start, v4l2_interface->buffers[i].length)) { fprintf(stderr,"Error freeing buffers \n"); return 0; } } break;
+    case IO_METHOD_USERPTR: for (i = 0; i < (int)v4l2_interface->n_buffers; ++i) { free (v4l2_interface->buffers[i].start); } break;
   }
   free (v4l2_interface->buffers);
 

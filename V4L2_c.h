@@ -51,7 +51,7 @@ struct V4L2_c_interface
   char device[MAX_DEVICE_FILENAME];
   io_method io;
   int fd;
-  buffer *buffers;
+  struct buffer *buffers;
   unsigned int n_buffers;
 };
 

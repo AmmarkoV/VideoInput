@@ -207,13 +207,13 @@ int VideoInput_OpenFeed(int inpt,char * viddev,int width,int height,int bitdepth
 
    /* IF videosettings is null set default capture mode ( VIDEO CAPTURE , YUYV mode , INTERLACED )  */
       if ( videosettings.EncodingType==0 ) { camera_feeds[inpt].fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; } else
-                                           { camera_feeds[inpt].fmt.type = (v4l2_buf_type) videosettings.EncodingType; }
+                                           { camera_feeds[inpt].fmt.type =  videosettings.EncodingType; }
 
       if ( videosettings.PixelFormat==0 ) { camera_feeds[inpt].fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; } else
                                           { camera_feeds[inpt].fmt.fmt.pix.pixelformat = videosettings.PixelFormat; }
 
       if ( videosettings.FieldType==0 ) { camera_feeds[inpt].fmt.fmt.pix.field = V4L2_FIELD_INTERLACED; } else
-                                        { camera_feeds[inpt].fmt.fmt.pix.field = (v4l2_field) videosettings.FieldType; }
+                                        { camera_feeds[inpt].fmt.fmt.pix.field =  videosettings.FieldType; }
 
       camera_feeds[inpt].input_pixel_format=camera_feeds[inpt].fmt.fmt.pix.pixelformat;
       camera_feeds[inpt].input_pixel_format_bitdepth=bitdepth;
