@@ -539,11 +539,10 @@ void * SnapLoop( void * ptr)
        { /* WE DONT NEED THE SNAPSHOT TO BE LOCKED!*/
           if ( camera_feeds[feed_num].snap_paused == 1 )
            {
-             //camera_feeds[feed_num].v4l2_intf->getFrame(); /*Get frame only to keep V4L2 running ? */
-             getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
+             //TODO: This was here to get stale snapshots when paused..
+             // it doesnt seem to contribute to anything :P .. getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
            } else
            {
-             //camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
              camera_feeds[feed_num].frame=getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
            }
 
