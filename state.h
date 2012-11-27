@@ -47,7 +47,7 @@ struct Video
   int keep_timestamp;
   int compress;
   char * mem_buffer_for_recording;
-  unsigned long * mem_buffer_for_recording_size;
+  unsigned long mem_buffer_for_recording_size;
 
   /* THREADING DATA */
   int thread_alive_flag;
