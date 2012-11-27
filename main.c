@@ -34,6 +34,8 @@
 #include "state.h"
 #include "tools.h"
 
+#define IDLE_SNAPPING 0
+
 //See state.h for some #defines that change  the library configuration
 
 char * VIDEOINPT_VERSION=(char *) "0.258 RGB24/YUYV compatible";
@@ -540,7 +542,8 @@ void * SnapLoop( void * ptr)
           if ( camera_feeds[feed_num].snap_paused == 1 )
            {
              //TODO: This was here to get stale snapshots when paused..
-             // it doesnt seem to contribute to anything :P .. getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
+             // it doesnt seem to contribute to anything :P ..
+             if (IDLE_SNAPPING) { getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface); }
            } else
            {
              camera_feeds[feed_num].frame=getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
