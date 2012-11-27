@@ -99,14 +99,16 @@ void StateManagement_SetToWebcamRecordOneInMem(int i,char * filename,int timesta
           camera_feeds[i].compress = compress;
           camera_feeds[i].mem_buffer_for_recording=mem;
           camera_feeds[i].mem_buffer_for_recording_size=*mem_size;
+          camera_feeds[i].jpeg_compressor_running=1;
           camera_feeds[i].video_simulation = RECORDING_ONE_ON;
 
         StateManagement_UnpauseFeed(i);
 
+        while (camera_feeds[i].jpeg_compressor_running) { usleep(1); }
         while (camera_feeds[i].video_simulation == RECORDING_ONE_ON) { usleep(1); }
 
         //Copy back result..
-        fprintf(stderr,"StateManagement_SetToWebcamRecordOneInMem copies back %u bytes\n",camera_feeds[i].mem_buffer_for_recording_size);
+        //fprintf(stderr,"StateManagement_SetToWebcamRecordOneInMem copies back %u bytes\n",camera_feeds[i].mem_buffer_for_recording_size);
         *mem_size = camera_feeds[i].mem_buffer_for_recording_size;
 }
 

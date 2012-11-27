@@ -46,6 +46,8 @@ struct Video
   int video_simulation;
   int keep_timestamp;
   int compress;
+
+  int jpeg_compressor_running;
   char * mem_buffer_for_recording;
   unsigned long mem_buffer_for_recording_size;
 
