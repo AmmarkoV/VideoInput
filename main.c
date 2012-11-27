@@ -168,7 +168,7 @@ int ChooseDifferentSoftFramerate(int inpt,unsigned int new_framerate_per_second)
     camera_feeds[inpt].sleep_time_per_frame_microseconds = (unsigned int ) 1000 / new_framerate_per_second;
     camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds * 1000;
 
-    camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds / 2;
+    camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds / 4;
     fprintf(stderr,"SleepTime per snapshot is %u microsecs\n",camera_feeds[inpt].sleep_time_per_frame_microseconds);
     return 1;
 }
