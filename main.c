@@ -38,7 +38,7 @@
 
 //See state.h for some #defines that change  the library configuration
 
-char * VIDEOINPT_VERSION=(char *) "0.258 RGB24/YUYV compatible";
+char * VIDEOINPT_VERSION=(char *) "0.259 RGB24/YUYV compatible";
 
 
 io_method io=IO_METHOD_MMAP; /*IO_METHOD_MMAP;  IO_METHOD_READ; IO_METHOD_USERPTR;*/
@@ -583,6 +583,7 @@ void * SnapLoop( void * ptr)
 
 void VideoInput_SaveFrameJPEGMemory(int webcam_id,char * mem,unsigned long * mem_size)
 {
+   if ( (mem==0) || (mem_size==0) ) { fprintf(stderr,"VideoInput_SaveFrameJPEGMemory called with incorrect parameters\n"); return; }
    StateManagement_SetToWebcamRecordOneInMem(webcam_id,(char*) "internal.jpg",0,1,mem,mem_size);
 }
 
