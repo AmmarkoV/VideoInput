@@ -170,7 +170,7 @@ int ChooseDifferentSoftFramerate(int inpt,unsigned int new_framerate_per_second)
     camera_feeds[inpt].sleep_time_per_frame_microseconds = (unsigned int ) 1000 / new_framerate_per_second;
     camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds * 1000;
 
-    camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds / 4;
+    camera_feeds[inpt].sleep_time_per_frame_microseconds = camera_feeds[inpt].sleep_time_per_frame_microseconds ;
     fprintf(stderr,"SleepTime per snapshot is %u microsecs\n",camera_feeds[inpt].sleep_time_per_frame_microseconds);
     return 1;
 }
@@ -444,6 +444,9 @@ void VideoInput_SignalFrameProcessed(int webcam_id)
 
 void RecordInLoop(int feed_num)
 {
+    //This is called from the thread that gets frames from the camera ( SnapLoop ) so there isn't any
+    //need for synchronization code ( it is the same process/thread after all )
+
     unsigned int mode_started = camera_feeds[feed_num].video_simulation;
 
     camera_feeds[feed_num].video_simulation = WORKING;
@@ -527,7 +530,6 @@ void * SnapLoop( void * ptr)
 
 
    printf("Try to snap #%d for the first time \n",feed_num);
-   //camera_feeds[feed_num].frame=camera_feeds[feed_num].v4l2_intf->getFrame();
    camera_feeds[feed_num].frame=getFrame_v4l2intf(&camera_feeds[feed_num].v4l2_interface);
    if (camera_feeds[feed_num].frame==0) { fprintf(stderr,"Got back a null frame while snapping for the very first time\n"); }
    printf("Video capture thread #%d is alive \n",feed_num);
