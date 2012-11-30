@@ -34,7 +34,7 @@ int test_jpeg_encoding(unsigned int width,unsigned int height)
 {
   unsigned long allocation_size = width * height * 3;
   unsigned long jpeg_picture_size = 0;
-  char * jpeg_picture = malloc(allocation_size);
+  char * jpeg_picture = (char*) malloc(allocation_size);
 
   fprintf(stderr,"Crash Testing JPEG Encoder.. ");
   int i=0;
